@@ -1,7 +1,7 @@
 # CLAUDE.md
 
 The Agent Skills a customer's AI coding agent installs for HotCodePush, the live-update platform for Capacitor, Cordova, React Native and Expo: `init`, `release` and `debug-no-update`, one folder each under `skills/`, listed on [skills.sh](https://skills.sh/) and linked from `hotcodepush.com/docs/ai` and every SDK README.
-Pure Markdown, no build and no dependencies; `scripts/check-skills.mjs` validates the folder shape and the frontmatter, and CI runs it.
+Pure Markdown, no build; `scripts/check-skills.mjs` validates the folder shape and the frontmatter with `yaml`, the one dependency, and CI runs it.
 
 The plan is the private `handbook` repo, checked out beside this one: `../handbook/docs/onboarding.md` defines the three skills, `cli.md` the commands they run and `drafts/debugging-guide.md` the nineteen causes.
 The CLI at `../cli` is the source of truth for every JSON shape, flag, code and exit code a procedure names; when the handbook and the CLI disagree, the skill follows the CLI and the difference is surfaced, never improvised around.
@@ -29,7 +29,7 @@ scripts/check-skills.mjs    the check: SKILL.md present, name equals the folder,
 
 | Command | Does |
 | --- | --- |
-| `node scripts/check-skills.mjs` | the check CI runs |
+| `npm run check` | the check CI runs |
 
 ## Process
 

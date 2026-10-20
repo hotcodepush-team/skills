@@ -2,6 +2,7 @@
 // Checks every skill under skills/: the folder shape and the SKILL.md frontmatter the Agent Skills spec requires.
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
+import { parse } from 'yaml';
 
 const SKILLS_DIRECTORY_PATH = resolve(import.meta.dirname, '..', 'skills');
 const README_PATH = resolve(import.meta.dirname, '..', 'README.md');
@@ -61,20 +62,26 @@ function checkFolderShape(skillName, skillDirectoryPath) {
 }
 
 function checkFrontmatter(skillName, skillText) {
-  const frontmatter = parseFrontmatter(skillText);
+  let frontmatter;
+  try {
+    frontmatter = parseFrontmatter(skillText);
+  } catch (error) {
+    problems.push(`${skillName}: the frontmatter is not valid YAML: ${error.message.trimEnd()}`);
+    return;
+  }
   if (frontmatter === undefined) {
     problems.push(`${skillName}: SKILL.md does not start with a --- frontmatter block.`);
     return;
   }
   const { description, name } = frontmatter;
-  if (name === undefined) {
+  if (typeof name !== 'string') {
     problems.push(`${skillName}: the frontmatter has no name.`);
   } else if (name !== skillName) {
     problems.push(`${skillName}: the frontmatter name "${name}" differs from the folder name.`);
   } else if (!NAME_PATTERN.test(name) || name.length > NAME_MAX_LENGTH) {
     problems.push(`${skillName}: the name must be 1 to ${NAME_MAX_LENGTH} lowercase letters, digits and single hyphens.`);
   }
-  if (description === undefined || description.length === 0) {
+  if (typeof description !== 'string' || description.length === 0) {
     problems.push(`${skillName}: the frontmatter has no description.`);
   } else if (description.length > DESCRIPTION_MAX_LENGTH) {
     problems.push(`${skillName}: the description is ${description.length} characters; at most ${DESCRIPTION_MAX_LENGTH}.`);
@@ -82,21 +89,12 @@ function checkFrontmatter(skillName, skillText) {
 }
 
 /**
- * The top-level `key: value` pairs between the two `---` lines; a quoted value loses its quotes, an indented line belongs to a nested key and is skipped.
+ * The YAML between the two `---` lines that open SKILL.md, an empty object when that block is empty, undefined when there is no block.
  */
 function parseFrontmatter(skillText) {
   const match = /^---\n([\s\S]*?)\n---\n/.exec(skillText);
   if (match === null) {
     return undefined;
   }
-  const frontmatter = {};
-  for (const line of match[1].split('\n')) {
-    const pair = /^([a-z][a-z0-9-]*):\s*(.*)$/.exec(line);
-    if (pair === null) {
-      continue;
-    }
-    const [, key, rawValue] = pair;
-    frontmatter[key] = rawValue.replace(/^"(.*)"$/, '$1').replace(/^'(.*)'$/, '$1');
-  }
-  return frontmatter;
+  return parse(match[1]) ?? {};
 }

@@ -38,12 +38,13 @@ See [hotcodepush.com/docs/ai](https://hotcodepush.com/docs/ai) for the agent set
 
 ## Development
 
-Pure Markdown: no build, no dependencies.
-The check CI runs validates each skill's folder shape and frontmatter:
+Pure Markdown: no build.
+The check CI runs validates each skill's folder shape and frontmatter, with `yaml` as its one dependency:
 
 ```sh
 nvm use
-node scripts/check-skills.mjs
+npm ci
+npm run check
 ```
 
 ## License
