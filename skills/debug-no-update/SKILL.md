@@ -139,7 +139,7 @@ Shows: `SKIPPED`, `RELEASE_REVOKED`, the release `status` `revoked` in `release 
 Fix: for a revoked release, publish a new one; for a local blocklist, the app's `reset()` returns the device to its embedded bundle and clears the list.
 
 **12. Live updates are off in this build.** Occasional, a one-line answer.
-Shows: every check on the device says `SKIPPED` with `BUILD_DEBUG`; the probe shows `AVAILABLE`. `enabledInDebugBuilds` is `false` in `hotcodepush.json`, or on React Native and Expo the build is a debug build served by Metro, which embeds no bundle and takes no updates.
+Shows: every check on the device says `SKIPPED` with `BUILD_DEBUG`; the probe shows `AVAILABLE`. `isEnabledInDebugBuilds` is `false` in `hotcodepush.json`, or on React Native and Expo the build is a debug build served by Metro, which embeds no bundle and takes no updates.
 Fix: test on a release build, or on a development build that follows its own channel.
 
 **13. The channel does not resolve.** Occasional, mostly on preview and tenant setups.
@@ -151,7 +151,7 @@ Shows: the probe shows `AVAILABLE`; the debug screen shows a downloaded release 
 Fix: call `setRestartAllowed({ isAllowed: true })` when the protected flow ends; the setting is never persisted.
 
 **15. The build step never ran.** Occasional, near-certain on a project not set up with `init`.
-Shows: `npx hotcodepush doctor --json` prints `hook` or `package` as `failed` with its `manualStep`; `device get --json` prints `fingerprint` `null` and `embeddedBundleId` `null`, or the device never reported at all. Without the build step the SDK has nothing to read.
+Shows: the device is missing from `npx hotcodepush device list --json`, and `npx hotcodepush doctor --json` prints `hook` or `package` as `failed` with its `manualStep`. Without the build step the SDK has nothing to read: it is not configured, never checks and never reports, so the device never appears in the list. A missing device alone proves nothing, since one that cannot reach the events endpoint is missing too; the failed check is the proof.
 Fix: the init skill; `init` is idempotent and is the repair command. Then a new build.
 
 **16. The organization is at its spending cap.** Rare, announced by mail beforehand.
