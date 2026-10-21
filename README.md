@@ -20,9 +20,9 @@ Each skill is a procedure over the HotCodePush CLI's `--json` output, so the age
 
 | Skill | What it does |
 | ----- | ------------ |
-| [`init`](./skills/init/) | Sets live updates up in an existing project: runs `hotcodepush init --yes --json`, handles the sign-in, performs every manual step the CLI stops on and repeats `hotcodepush doctor --json` until it is clean. |
-| [`release`](./skills/release/) | Builds where the framework needs it, previews the audience with `release create --dry-run --json`, publishes with `release create --yes --json` and reports the release, the audience and the warnings. |
-| [`debug-no-update`](./skills/debug-no-update/) | Finds out why a device did not update: the nineteen causes as a decision procedure over `device probe --json` and `doctor --json`, each with its reason code, the field that shows it and the fix. |
+| [`hotcodepush-init`](./skills/hotcodepush-init/) | Sets live updates up in an existing project: runs `hotcodepush init --yes --json`, handles the sign-in, performs every manual step the CLI stops on and repeats `hotcodepush doctor --json` until it is clean. |
+| [`hotcodepush-release`](./skills/hotcodepush-release/) | Builds where the framework needs it, previews the audience with `release create --dry-run --json`, publishes with `release create --yes --json` and reports the release, the audience and the warnings. |
+| [`hotcodepush-debug-no-update`](./skills/hotcodepush-debug-no-update/) | Finds out why a device did not update: the nineteen causes as a decision procedure over `device probe --json` and `doctor --json`, each with its reason code, the field that shows it and the fix. |
 
 Prompts that trigger them, in any agent:
 

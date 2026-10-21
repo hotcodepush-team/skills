@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-The Agent Skills a customer's AI coding agent installs for HotCodePush, the live-update platform for Capacitor, Cordova, React Native and Expo: `init`, `release` and `debug-no-update`, one folder each under `skills/`, listed on [skills.sh](https://skills.sh/) and linked from `hotcodepush.com/docs/ai` and every SDK README.
+The Agent Skills a customer's AI coding agent installs for HotCodePush, the live-update platform for Capacitor, Cordova, React Native and Expo: `hotcodepush-init`, `hotcodepush-release` and `hotcodepush-debug-no-update`, one folder each under `skills/`, listed on [skills.sh](https://skills.sh/) and linked from `hotcodepush.com/docs/ai` and every SDK README.
 Pure Markdown, no build; `scripts/check-skills.mjs` validates the folder shape and the frontmatter with `yaml`, the one dependency, and CI runs it.
 
 The plan is the private `handbook` repo, checked out beside this one: `../handbook/docs/onboarding.md` defines the three skills, `cli.md` the commands they run and `drafts/debugging-guide.md` the nineteen causes.

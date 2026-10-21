@@ -1,11 +1,11 @@
 ---
-name: release
-description: "Builds, uploads and releases a live update with the HotCodePush CLI: runs the project's build where the framework needs one (Capacitor and Cordova), previews the audience with hotcodepush release create --dry-run --json, publishes with hotcodepush release create --yes --json, labels the bundle from the commit in CI, and reports the release number, the audience and every warning. Use when asked to release, publish, ship or deploy a live update, an over-the-air update or a code-push bundle to a channel. Do not use to set up a project that has no hotcodepush.json (the init skill), to pause, revoke or roll back an existing release, or to debug a device that did not update (the debug-no-update skill)."
+name: hotcodepush-release
+description: "Builds, uploads and releases a live update with the HotCodePush CLI: runs the project's build where the framework needs one (Capacitor and Cordova), previews the audience with hotcodepush release create --dry-run --json, publishes with hotcodepush release create --yes --json, labels the bundle from the commit in CI, and reports the release number, the audience and every warning. Use when asked to release, publish, ship or deploy a live update, an over-the-air update or a code-push bundle to a channel. Do not use to set up a project that has no hotcodepush.json (the hotcodepush-init skill), to pause, revoke or roll back an existing release, or to debug a device that did not update (the hotcodepush-debug-no-update skill)."
 license: MIT
 compatibility: "Requires Node.js 22 or later, a project set up with hotcodepush init, a credential (HOTCODEPUSH_TOKEN or a stored login) and network access to api.hotcodepush.com."
 metadata:
   author: hotcodepush-team
-  source: https://github.com/hotcodepush-team/skills/tree/main/skills/release
+  source: https://github.com/hotcodepush-team/skills/tree/main/skills/hotcodepush-release
 ---
 
 # Release a live update
@@ -25,7 +25,7 @@ Publish a live update with HotCodePush, the live-update platform for Capacitor, 
 
 ### Step 1: Check the project
 
-1. Find `hotcodepush.json` in the working directory or a directory above it. None: stop and point at the init skill.
+1. Find `hotcodepush.json` in the working directory or a directory above it. None: stop and point at the hotcodepush-init skill.
 2. Read the framework from `package.json`: `@capacitor/core`, `cordova`, `expo` or `react-native`.
 3. Read `hotcodepush.json`: `channel` is the default channel (`production` when absent); `publicKeys` not empty means the app signs its bundles, so the upload needs the private key. In CI it is the secret `HOTCODEPUSH_SIGNING_KEY`; in a session, ask the person for the key file's path and pass `--private-key-path <file>`.
 4. Note the package manager from the lockfile: `bun.lock` or `bun.lockb`, `pnpm-lock.yaml`, `yarn.lock`, otherwise npm. The CLI uses the same one.
@@ -102,7 +102,7 @@ stdout is an array of releases, one per channel, and on React Native and Expo on
 | `0` | Done | Step 7. |
 | `1` | An error, `error.code` on stdout | See the table below. |
 | `2` | A missing or invalid parameter | `E_MISSING_PARAMETER` names the flag: `--path <dir>` when `capacitor.config` sets no `webDir` the CLI can read, `--bundle-version <label>` when `package.json` has no `version`. `E_INVALID_PARAMETER` names the wrong flag or `hotcodepush.json` field; correct it and run again. |
-| `3` | Not logged in, `E_NOT_LOGGED_IN` or the API's `E_UNAUTHENTICATED` | Set `HOTCODEPUSH_TOKEN`, or log in as the init skill's authentication modes describe. |
+| `3` | Not logged in, `E_NOT_LOGGED_IN` or the API's `E_UNAUTHENTICATED` | Set `HOTCODEPUSH_TOKEN`, or log in as the hotcodepush-init skill's authentication modes describe. |
 | `4` | A confirmation required, `E_CONFIRMATION_REQUIRED` | `--yes` was left out. |
 
 Codes under exit `1`:
@@ -128,7 +128,7 @@ A run repeated after success creates another release of the same bundle; that is
 2. The audience from Step 4: reached of total, and every warning with what it means.
 3. The commit the release carries, and that the working tree was dirty when it was.
 4. What devices do: by default they check at start and resume and apply the update at the next cold start; the person closes the app completely and reopens it to see the change. A mandatory release applies at once.
-5. How to watch it: `npx hotcodepush release get --channel <channel> --release <number> --json` shows `releaseCounters` (`attemptedUpdateCount`, `appliedUpdateCount`, the failure counts) and the progression step; a device that did not update is the debug-no-update skill's case.
+5. How to watch it: `npx hotcodepush release get --channel <channel> --release <number> --json` shows `releaseCounters` (`attemptedUpdateCount`, `appliedUpdateCount`, the failure counts) and the progression step; a device that did not update is the hotcodepush-debug-no-update skill's case.
 6. For a pipeline: the same command, `npx hotcodepush release create --yes`, with `HOTCODEPUSH_TOKEN` and, when the app signs, `HOTCODEPUSH_SIGNING_KEY` as secrets, and `release create --dry-run` in the pull-request pipeline, which holds no secret.
 
 ## Error Handling

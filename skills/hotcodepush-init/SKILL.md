@@ -1,11 +1,11 @@
 ---
-name: init
-description: "Sets HotCodePush live updates up in an existing Capacitor, Cordova, React Native or Expo project: runs hotcodepush init --yes --json, handles the three authentication modes (a token in HOTCODEPUSH_TOKEN, a person who approves the device-authorization link, nobody watching), performs every manual step the CLI stops on and repeats hotcodepush doctor --json until it is clean. Use when asked to add live updates, over-the-air updates or code push to an app, to set up or repair HotCodePush in a project, or when doctor reports a failed check. Do not use to publish a release (the release skill) or to find out why a device did not update (the debug-no-update skill)."
+name: hotcodepush-init
+description: "Sets HotCodePush live updates up in an existing Capacitor, Cordova, React Native or Expo project: runs hotcodepush init --yes --json, handles the three authentication modes (a token in HOTCODEPUSH_TOKEN, a person who approves the device-authorization link, nobody watching), performs every manual step the CLI stops on and repeats hotcodepush doctor --json until it is clean. Use when asked to add live updates, over-the-air updates or code push to an app, to set up or repair HotCodePush in a project, or when doctor reports a failed check. Do not use to publish a release (the hotcodepush-release skill) or to find out why a device did not update (the hotcodepush-debug-no-update skill)."
 license: MIT
 compatibility: "Requires Node.js 22 or later, the project's package manager, network access to api.hotcodepush.com and a HotCodePush account."
 metadata:
   author: hotcodepush-team
-  source: https://github.com/hotcodepush-team/skills/tree/main/skills/init
+  source: https://github.com/hotcodepush-team/skills/tree/main/skills/hotcodepush-init
 ---
 
 # Set up HotCodePush
@@ -50,7 +50,7 @@ Read stdout:
 
 Every entry of `steps` is `{ "step", "status", "message" }` with `"code"` and `"manualStep"` on a stopped step.
 The steps are `sign-in`, `organization`, `app`, `package`, `configuration`, `hook`, `signing-key`, `build` and `release`, each `done`, `skipped` or `stopped`.
-Under `--yes` the steps `signing-key`, `build` and `release` are always `skipped`: they are interactive-only, and the first release comes from the release skill.
+Under `--yes` the steps `signing-key`, `build` and `release` are always `skipped`: they are interactive-only, and the first release comes from the hotcodepush-release skill.
 A step `skipped` with `Waits on the <step> step.` resolves itself on the next run.
 
 ### Step 3: Perform every manual step
@@ -109,7 +109,7 @@ Run `doctor` after every round of fixes, at most three rounds, until `status` is
 1. Run `npx hotcodepush open --json`; it prints `{ "url" }`, the app's console page, and launches nothing.
 2. Report, in this order: what `init` did (the `message` of every `done` step), what was done by hand, the console URL and the docs at `https://hotcodepush.com/docs`.
 3. Say what happens next: a store build, an Xcode archive or a Gradle release build, runs the build step the setup wired and registers the binary; a developer's build takes updates too, its first update being the full bundle; a React Native or Expo debug build served by Metro takes no updates.
-4. Point at the first release: the release skill, or `npm run build && npx hotcodepush release create` on Capacitor and Cordova and `npx hotcodepush release create` on React Native and Expo.
+4. Point at the first release: the hotcodepush-release skill, or `npm run build && npx hotcodepush release create` on Capacitor and Cordova and `npx hotcodepush release create` on React Native and Expo.
 5. Mention once that code signing is off and that `npx hotcodepush signing-key create` turns it on, without running it.
 6. List the files that changed, `hotcodepush.json`, `package.json`, the lockfile and the native files, for the person to review and commit.
 

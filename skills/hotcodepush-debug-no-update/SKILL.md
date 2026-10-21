@@ -1,11 +1,11 @@
 ---
-name: debug-no-update
-description: "Finds out why a device did not take a HotCodePush live update: a decision procedure over hotcodepush device probe --json and hotcodepush doctor --json, covering the nineteen causes in the order support sees them, each with the reason code the device reports, the output field that shows it and the fix. Use when a device, a tester's phone, a simulator or a share of the fleet did not update, still shows the old version after a release, or reports SKIPPED or FAILED with a reason such as DEVICE_INCOMPATIBLE, DEVICE_NOT_IN_ROLLOUT, CHANNEL_PAUSED or RELEASE_OLDER_THAN_BINARY. Do not use to set up a project (the init skill) or to publish a release (the release skill)."
+name: hotcodepush-debug-no-update
+description: "Finds out why a device did not take a HotCodePush live update: a decision procedure over hotcodepush device probe --json and hotcodepush doctor --json, covering the nineteen causes in the order support sees them, each with the reason code the device reports, the output field that shows it and the fix. Use when a device, a tester's phone, a simulator or a share of the fleet did not update, still shows the old version after a release, or reports SKIPPED or FAILED with a reason such as DEVICE_INCOMPATIBLE, DEVICE_NOT_IN_ROLLOUT, CHANNEL_PAUSED or RELEASE_OLDER_THAN_BINARY. Do not use to set up a project (the hotcodepush-init skill) or to publish a release (the hotcodepush-release skill)."
 license: MIT
 compatibility: "Requires Node.js 22 or later, a project with hotcodepush.json or the --app and --channel flags, a credential (HOTCODEPUSH_TOKEN or a stored login) and network access to api.hotcodepush.com."
 metadata:
   author: hotcodepush-team
-  source: https://github.com/hotcodepush-team/skills/tree/main/skills/debug-no-update
+  source: https://github.com/hotcodepush-team/skills/tree/main/skills/hotcodepush-debug-no-update
 ---
 
 # Why did a device not update
@@ -96,7 +96,7 @@ The device-only reasons `BUILD_DEBUG`, `CONNECTION_METERED` and every `FAILED` r
 
 **1. The release carries the previous build.** Very common.
 Shows: `UP_TO_DATE` on the expected release, and the app looks unchanged. `npx hotcodepush release get --channel <channel> --release <number> --json` prints `bundle.gitSha`, `bundle.gitRef`, `bundle.gitMessage` and `bundle.isGitDirty`; a sha that is not the expected commit, or a dirty flag, means the upload took an older or uncommitted build. On Capacitor and Cordova the web build is the project's own, so a `release create` without a build in front releases yesterday's output.
-Fix: build, then release, as one step, `npm run build && npx hotcodepush release create`; the release skill does both.
+Fix: build, then release, as one step, `npm run build && npx hotcodepush release create`; the hotcodepush-release skill does both.
 
 **2. The device has not applied it yet.** Very common, and almost every report in the first hour.
 Shows: `AVAILABLE`; with `--device`, `device.currentRelease.number` below the expected number and `device.reportedAt` older than the release's `liveAt`. The default strategy applies an update at the next cold start, and checks happen at start, on resume and at most every fifteen minutes in the foreground.
@@ -152,7 +152,7 @@ Fix: call `setRestartAllowed({ isAllowed: true })` when the protected flow ends;
 
 **15. The build step never ran.** Occasional, near-certain on a project not set up with `init`.
 Shows: the device is missing from `npx hotcodepush device list --json`, and `npx hotcodepush doctor --json` prints `hook` or `package` as `failed` with its `manualStep`. Without the build step the SDK has nothing to read: it is not configured, never checks and never reports, so the device never appears in the list. A missing device alone proves nothing, since one that cannot reach the events endpoint is missing too; the failed check is the proof.
-Fix: the init skill; `init` is idempotent and is the repair command. Then a new build.
+Fix: the hotcodepush-init skill; `init` is idempotent and is the repair command. Then a new build.
 
 **16. The organization is at its spending cap.** Rare, announced by mail beforehand.
 Shows: `SKIPPED`, `SPENDING_CAP_REACHED`; `npx hotcodepush organization get --json` prints `spendingCapCents` and `cappedAt`. Devices counted within the cap get every update; devices beyond it receive nothing new until the month turns or the cap is raised.
@@ -179,7 +179,7 @@ Fix: for the first seconds, wait and probe again. If the probe still reports a m
 
 ## Error Handling
 
-- Exit `3`, `E_NOT_LOGGED_IN`: the probe needs a credential; set `HOTCODEPUSH_TOKEN` or log in as the init skill describes.
+- Exit `3`, `E_NOT_LOGGED_IN`: the probe needs a credential; set `HOTCODEPUSH_TOKEN` or log in as the hotcodepush-init skill describes.
 - Exit `2`, `E_MISSING_PARAMETER` naming `--platform`, `--binary-version` or `--binary-build`: without `--device` all three are required.
 - Exit `2`, `E_INVALID_PARAMETER`: a channel name the app lacks, an attribute that is not `key=value`, or a device id the app does not know; `message` names it.
 - `E_NOT_FOUND` on `--device`: the device was deleted or belongs to another app.
