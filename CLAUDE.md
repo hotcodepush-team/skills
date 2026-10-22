@@ -23,7 +23,7 @@ scripts/check-skills.mjs    the check: SKILL.md present, name equals the folder,
 - Third-person imperative, no "you". The `description` is the trigger: what it does, when to use it, and when not to, naming the sibling skill instead.
 - Keep `SKILL.md` under 500 lines; a large rule set moves to `references/`.
 - Voice: `HotCodePush` in CamelCase, the appositive "the over-the-air (OTA) update platform for Capacitor, React Native, Expo and Cordova" on the first mention in a file, no exclamation marks, no emoji, plain headings.
-- HotCodePush ships over-the-air (OTA) updates: "over-the-air (OTA) update" on the first mention in a file, "OTA update" after it. "Live update" appears only in a `description`'s list of alternative names ("OTA updates, also called live updates, code push or hot code push") and in the Capacitor package name `capacitor-live-updates`, never as HotCodePush's own term.
+- HotCodePush ships over-the-air (OTA) updates: "over-the-air (OTA) update" on the first mention in a file, "OTA update" after it. "Live update" appears only in a `description`'s list of alternative names ("OTA updates, live updates or code push") and in the Capacitor package name `capacitor-live-updates`, never as HotCodePush's own term.
 - Quote the `description` in double quotes; a colon in an unquoted YAML value breaks parsers.
 
 ## Commands
