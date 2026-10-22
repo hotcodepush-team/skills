@@ -2,7 +2,7 @@
 
 [![Install via skills.sh](https://img.shields.io/badge/skills.sh-install-green)](https://skills.sh/hotcodepush-team/skills)
 
-The Agent Skills an AI coding agent installs to set up, release and debug updates with HotCodePush, the over-the-air (OTA) update platform for Capacitor, React Native, Expo and Cordova.
+The Agent Skills an AI coding agent installs to set up, release and debug updates with HotCodePush, the over-the-air (OTA) update platform for React Native, Expo, Capacitor and Cordova.
 
 ## Installation
 

@@ -10,7 +10,7 @@ metadata:
 
 # Why did a device not update
 
-Find the cause when a device did not take an update from HotCodePush, the over-the-air (OTA) update platform for Capacitor, React Native, Expo and Cordova.
+Find the cause when a device did not take an update from HotCodePush, the over-the-air (OTA) update platform for React Native, Expo, Capacitor and Cordova.
 Almost every answer is one of three: the device has not restarted or checked yet, the released bundle was the previous build, or the release excludes the device on compatibility.
 Every other cause names itself with a reason code, and `hotcodepush device probe` prints it from the agent's machine.
 The causes below are ordered by how often each happens, not by how the system is built; work down them in order and stop at the first that matches.

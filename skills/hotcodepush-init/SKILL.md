@@ -1,6 +1,6 @@
 ---
 name: hotcodepush-init
-description: "Sets HotCodePush over-the-air (OTA) updates up in an existing Capacitor, Cordova, React Native or Expo project: runs hotcodepush init --yes --json, handles the three authentication modes (a token in HOTCODEPUSH_TOKEN, a person who approves the device-authorization link, nobody watching), performs every manual step the CLI stops on and repeats hotcodepush doctor --json until it is clean. Use when asked to add OTA updates, live updates or code push to an app, to set up or repair HotCodePush in a project, or when doctor reports a failed check. Do not use to publish a release (the hotcodepush-release skill) or to find out why a device did not update (the hotcodepush-debug-no-update skill)."
+description: "Sets HotCodePush over-the-air (OTA) updates up in an existing React Native, Expo, Capacitor or Cordova project: runs hotcodepush init --yes --json, handles the three authentication modes (a token in HOTCODEPUSH_TOKEN, a person who approves the device-authorization link, nobody watching), performs every manual step the CLI stops on and repeats hotcodepush doctor --json until it is clean. Use when asked to add OTA updates, live updates or code push to an app, to set up or repair HotCodePush in a project, or when doctor reports a failed check. Do not use to publish a release (the hotcodepush-release skill) or to find out why a device did not update (the hotcodepush-debug-no-update skill)."
 license: MIT
 compatibility: "Requires Node.js 22 or later, the project's package manager, network access to api.hotcodepush.com and a HotCodePush account."
 metadata:
@@ -10,7 +10,7 @@ metadata:
 
 # Set up HotCodePush
 
-Set up HotCodePush, the over-the-air (OTA) update platform for Capacitor, React Native, Expo and Cordova, in an existing app project.
+Set up HotCodePush, the over-the-air (OTA) update platform for React Native, Expo, Capacitor and Cordova, in an existing app project.
 One CLI command does the ordinary project; this skill handles the unusual one: it runs `hotcodepush init --yes --json`, performs every step the CLI stopped on, and verifies the result with `hotcodepush doctor --json` until it is clean.
 
 ## Rules
@@ -28,7 +28,7 @@ One CLI command does the ordinary project; this skill handles the unusual one: i
 ### Step 1: Detect the project
 
 1. Find the project root: the directory holding `package.json`. Run every command from there.
-2. Read `package.json`'s `dependencies` and `devDependencies`. The CLI detects the framework from `@capacitor/core`, `cordova`, `expo` and `react-native`, with the framework's config file (`capacitor.config.json` or `.ts`, `config.xml`, `app.json` with an `expo` key) breaking a tie. None of the four: stop and say that HotCodePush supports Capacitor, Cordova, React Native and Expo.
+2. Read `package.json`'s `dependencies` and `devDependencies`. The CLI detects the framework from `react-native`, `expo`, `@capacitor/core` and `cordova`, with the framework's config file (`app.json` with an `expo` key, `capacitor.config.json` or `.ts`, `config.xml`) breaking a tie. None of the four: stop and say that HotCodePush supports React Native, Expo, Capacitor and Cordova.
 3. Pass `--framework capacitor|cordova|expo|react-native` only when the person says the detection is wrong.
 4. If `hotcodepush.json` exists in the root or a directory above it, this is a repair run: `init` keeps the app it names and completes what is missing.
 
@@ -109,14 +109,14 @@ Run `doctor` after every round of fixes, at most three rounds, until `status` is
 1. Run `npx hotcodepush open --json`; it prints `{ "url" }`, the app's console page, and launches nothing.
 2. Report, in this order: what `init` did (the `message` of every `done` step), what was done by hand, the console URL and the docs at `https://hotcodepush.com/docs`.
 3. Say what happens next: a store build, an Xcode archive or a Gradle release build, runs the build step the setup wired and registers the binary; a developer's build takes updates too, its first update being the full bundle; a React Native or Expo debug build served by Metro takes no updates.
-4. Point at the first release: the hotcodepush-release skill, or `npm run build && npx hotcodepush release create` on Capacitor and Cordova and `npx hotcodepush release create` on React Native and Expo.
+4. Point at the first release: the hotcodepush-release skill, or `npx hotcodepush release create` on React Native and Expo and `npm run build && npx hotcodepush release create` on Capacitor and Cordova.
 5. Mention once that code signing is off and that `npx hotcodepush signing-key create` turns it on, without running it.
 6. List the files that changed, `hotcodepush.json`, `package.json`, the lockfile and the native files, for the person to review and commit.
 
 ## Error Handling
 
 - `npx` cannot find `hotcodepush`: the CLI is not installed. Install it as a dev dependency with the project's package manager as the docs at `https://hotcodepush.com/docs/cli` name it, then run the command again.
-- `E_UNKNOWN_FRAMEWORK`: `package.json` names none of `@capacitor/core`, `cordova`, `expo` or `react-native`. Stop and say so.
+- `E_UNKNOWN_FRAMEWORK`: `package.json` names none of `react-native`, `expo`, `@capacitor/core` or `cordova`. Stop and say so.
 - `E_INVALID_JSON`: a file the CLI reads does not parse; `message` names the file and where parsing stopped. Fix the JSON and run again.
 - `E_INVALID_PARAMETER` with `--config`: the named `hotcodepush.json` does not exist. Run from the project root without `--config`.
 - `E_CLIENT_UPDATE_REQUIRED`: the CLI version is refused by the API. Update the CLI as `message` says.

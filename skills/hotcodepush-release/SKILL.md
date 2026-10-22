@@ -10,7 +10,7 @@ metadata:
 
 # Release an update
 
-Publish an update with HotCodePush, the over-the-air (OTA) update platform for Capacitor, React Native, Expo and Cordova: build where the framework needs it, preview the audience, release, and report what happened.
+Publish an update with HotCodePush, the over-the-air (OTA) update platform for React Native, Expo, Capacitor and Cordova: build where the framework needs it, preview the audience, release, and report what happened.
 `hotcodepush release create` uploads the build and releases it to the project's channel in one command; this skill puts the build in front of it and reads the result.
 
 ## Rules
@@ -26,7 +26,7 @@ Publish an update with HotCodePush, the over-the-air (OTA) update platform for C
 ### Step 1: Check the project
 
 1. Find `hotcodepush.json` in the working directory or a directory above it. None: stop and point at the hotcodepush-init skill.
-2. Read the framework from `package.json`: `@capacitor/core`, `cordova`, `expo` or `react-native`.
+2. Read the framework from `package.json`: `react-native`, `expo`, `@capacitor/core` or `cordova`.
 3. Read `hotcodepush.json`: `channel` is the default channel (`production` when absent); `publicKeys` not empty means the app signs its bundles, so the upload needs the private key. In CI it is the secret `HOTCODEPUSH_SIGNING_KEY`; in a session, ask the person for the key file's path and pass `--private-key-path <file>`.
 4. Note the package manager from the lockfile: `bun.lock` or `bun.lockb`, `pnpm-lock.yaml`, `yarn.lock`, otherwise npm. The CLI uses the same one.
 5. In CI, `HOTCODEPUSH_TOKEN` must be set; a pipeline without it exits `3`.
@@ -35,10 +35,10 @@ Publish an update with HotCodePush, the over-the-air (OTA) update platform for C
 
 | Framework | Before the release |
 | --- | --- |
-| Capacitor | Run the `build` script with the project's package manager, `npm run build`. The release uploads `webDir` from `capacitor.config`. No `build` script: stop and ask how the web build is made; never upload a `webDir` of unknown age. |
-| Cordova | Run the `build` script when `package.json` has one; otherwise `www` is the source and is uploaded as it is. |
 | React Native | Nothing. The release runs `react-native bundle` per platform itself, inside the upload. |
 | Expo | Nothing. The release runs `expo export:embed` per platform itself, inside the upload. |
+| Capacitor | Run the `build` script with the project's package manager, `npm run build`. The release uploads `webDir` from `capacitor.config`. No `build` script: stop and ask how the web build is made; never upload a `webDir` of unknown age. |
+| Cordova | Run the `build` script when `package.json` has one; otherwise `www` is the source and is uploaded as it is. |
 
 A build that exits non-zero stops the procedure; report its output.
 On React Native and Expo the dependencies must be installed, since the CLI runs the project's bundler and Hermes compiler.
