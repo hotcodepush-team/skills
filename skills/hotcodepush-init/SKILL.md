@@ -1,6 +1,6 @@
 ---
 name: hotcodepush-init
-description: "Sets HotCodePush live updates up in an existing Capacitor, Cordova, React Native or Expo project: runs hotcodepush init --yes --json, handles the three authentication modes (a token in HOTCODEPUSH_TOKEN, a person who approves the device-authorization link, nobody watching), performs every manual step the CLI stops on and repeats hotcodepush doctor --json until it is clean. Use when asked to add live updates, over-the-air updates or code push to an app, to set up or repair HotCodePush in a project, or when doctor reports a failed check. Do not use to publish a release (the hotcodepush-release skill) or to find out why a device did not update (the hotcodepush-debug-no-update skill)."
+description: "Sets HotCodePush over-the-air (OTA) updates up in an existing Capacitor, Cordova, React Native or Expo project: runs hotcodepush init --yes --json, handles the three authentication modes (a token in HOTCODEPUSH_TOKEN, a person who approves the device-authorization link, nobody watching), performs every manual step the CLI stops on and repeats hotcodepush doctor --json until it is clean. Use when asked to add OTA updates, live updates or code push to an app, to set up or repair HotCodePush in a project, or when doctor reports a failed check. Do not use to publish a release (the hotcodepush-release skill) or to find out why a device did not update (the hotcodepush-debug-no-update skill)."
 license: MIT
 compatibility: "Requires Node.js 22 or later, the project's package manager, network access to api.hotcodepush.com and a HotCodePush account."
 metadata:
@@ -10,7 +10,7 @@ metadata:
 
 # Set up HotCodePush
 
-Set up HotCodePush, the live-update platform for Capacitor, Cordova, React Native and Expo, in an existing app project.
+Set up HotCodePush, the over-the-air (OTA) update platform for Capacitor, React Native, Expo and Cordova, in an existing app project.
 One CLI command does the ordinary project; this skill handles the unusual one: it runs `hotcodepush init --yes --json`, performs every step the CLI stopped on, and verifies the result with `hotcodepush doctor --json` until it is clean.
 
 ## Rules

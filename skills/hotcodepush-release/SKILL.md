@@ -1,6 +1,6 @@
 ---
 name: hotcodepush-release
-description: "Builds, uploads and releases a live update with the HotCodePush CLI: runs the project's build where the framework needs one (Capacitor and Cordova), previews the audience with hotcodepush release create --dry-run --json, publishes with hotcodepush release create --yes --json, labels the bundle from the commit in CI, and reports the release number, the audience and every warning. Use when asked to release, publish, ship or deploy a live update, an over-the-air update or a code-push bundle to a channel. Do not use to set up a project that has no hotcodepush.json (the hotcodepush-init skill), to pause, revoke or roll back an existing release, or to debug a device that did not update (the hotcodepush-debug-no-update skill)."
+description: "Builds, uploads and releases an over-the-air (OTA) update with the HotCodePush CLI: runs the project's build where the framework needs one (Capacitor and Cordova), previews the audience with hotcodepush release create --dry-run --json, publishes with hotcodepush release create --yes --json, labels the bundle from the commit in CI, and reports the release number, the audience and every warning. Use when asked to release, publish, ship or deploy an OTA update, a live update or a code-push bundle to a channel. Do not use to set up a project that has no hotcodepush.json (the hotcodepush-init skill), to pause, revoke or roll back an existing release, or to debug a device that did not update (the hotcodepush-debug-no-update skill)."
 license: MIT
 compatibility: "Requires Node.js 22 or later, a project set up with hotcodepush init, a credential (HOTCODEPUSH_TOKEN or a stored login) and network access to api.hotcodepush.com."
 metadata:
@@ -8,9 +8,9 @@ metadata:
   source: https://github.com/hotcodepush-team/skills/tree/main/skills/hotcodepush-release
 ---
 
-# Release a live update
+# Release an update
 
-Publish a live update with HotCodePush, the live-update platform for Capacitor, Cordova, React Native and Expo: build where the framework needs it, preview the audience, release, and report what happened.
+Publish an update with HotCodePush, the over-the-air (OTA) update platform for Capacitor, React Native, Expo and Cordova: build where the framework needs it, preview the audience, release, and report what happened.
 `hotcodepush release create` uploads the build and releases it to the project's channel in one command; this skill puts the build in front of it and reads the result.
 
 ## Rules

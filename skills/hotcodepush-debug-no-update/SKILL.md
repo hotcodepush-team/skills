@@ -1,6 +1,6 @@
 ---
 name: hotcodepush-debug-no-update
-description: "Finds out why a device did not take a HotCodePush live update: a decision procedure over hotcodepush device probe --json and hotcodepush doctor --json, covering the nineteen causes in the order support sees them, each with the reason code the device reports, the output field that shows it and the fix. Use when a device, a tester's phone, a simulator or a share of the fleet did not update, still shows the old version after a release, or reports SKIPPED or FAILED with a reason such as DEVICE_INCOMPATIBLE, DEVICE_NOT_IN_ROLLOUT, CHANNEL_PAUSED or RELEASE_OLDER_THAN_BINARY. Do not use to set up a project (the hotcodepush-init skill) or to publish a release (the hotcodepush-release skill)."
+description: "Finds out why a device did not take a HotCodePush over-the-air (OTA) update: a decision procedure over hotcodepush device probe --json and hotcodepush doctor --json, covering the nineteen causes in the order support sees them, each with the reason code the device reports, the output field that shows it and the fix. Use when a device, a tester's phone, a simulator or a share of the fleet did not update, still shows the old version after a release, or reports SKIPPED or FAILED with a reason such as DEVICE_INCOMPATIBLE, DEVICE_NOT_IN_ROLLOUT, CHANNEL_PAUSED or RELEASE_OLDER_THAN_BINARY. Do not use to set up a project (the hotcodepush-init skill) or to publish a release (the hotcodepush-release skill)."
 license: MIT
 compatibility: "Requires Node.js 22 or later, a project with hotcodepush.json or the --app and --channel flags, a credential (HOTCODEPUSH_TOKEN or a stored login) and network access to api.hotcodepush.com."
 metadata:
@@ -10,7 +10,7 @@ metadata:
 
 # Why did a device not update
 
-Find the cause when a device did not take a live update from HotCodePush, the live-update platform for Capacitor, Cordova, React Native and Expo.
+Find the cause when a device did not take an update from HotCodePush, the over-the-air (OTA) update platform for Capacitor, React Native, Expo and Cordova.
 Almost every answer is one of three: the device has not restarted or checked yet, the released bundle was the previous build, or the release excludes the device on compatibility.
 Every other cause names itself with a reason code, and `hotcodepush device probe` prints it from the agent's machine.
 The causes below are ordered by how often each happens, not by how the system is built; work down them in order and stop at the first that matches.
@@ -138,7 +138,7 @@ Fix: set the attributes before the first sync, or release without the condition.
 Shows: `SKIPPED`, `RELEASE_REVOKED`, the release `status` `revoked` in `release get --json`; or `BUNDLE_FAILED_BEFORE` with the bundle in `device.failedBundleIds`, from the device's `failed` events. `releaseCounters` shows whether it is this device or all of them.
 Fix: for a revoked release, publish a new one; for a local blocklist, the app's `reset()` returns the device to its embedded bundle and clears the list.
 
-**12. Live updates are off in this build.** Occasional, a one-line answer.
+**12. OTA updates are off in this build.** Occasional, a one-line answer.
 Shows: every check on the device says `SKIPPED` with `BUILD_DEBUG`; the probe shows `AVAILABLE`. `isEnabledInDebugBuilds` is `false` in `hotcodepush.json`, or on React Native and Expo the build is a debug build served by Metro, which embeds no bundle and takes no updates.
 Fix: test on a release build, or on a development build that follows its own channel.
 
