@@ -26,7 +26,7 @@ Every source has a guide that carries the detail, the full CLI and SDK mapping a
 | Capgo | `https://hotcodepush.com/docs/migrate/capgo` |
 | Ionic Appflow | `https://hotcodepush.com/docs/migrate/ionic-appflow` |
 
-Read the guide before acting: its markdown twin is the URL plus `.md`, or the HotCodePush MCP server's `get_doc_page` tool with the path, `/docs/migrate/capgo`. This skill carries the procedure; the guide carries the detail. Where the two disagree, follow the guide and say so in the report.
+Read the guide before acting: its markdown twin is the URL plus `.md`, or the HotCodePush MCP server's `get_doc_page` tool with the path, `/docs/migrate/capgo`. This skill carries the procedure; the guide carries the detail. Where the two disagree, follow the guide and say so in the report; the one exception is the secrets rule below, which wins over a guide's delete.
 
 ## Rules
 
@@ -246,7 +246,7 @@ The fingerprint rides on every release and keeps it off a build whose native cod
 
 ### Step 6: The checklist for the store release
 
-A release created before a binary was built is never served to that binary, so the order is: store build, then release. The report lists the guide's differences section, "What else differs" on CodePush, EAS Update and RevoPush and "What differs" on the others, and the items below for the source, each as one line the person confirms before they build. Nothing here waits for them.
+A release created before a binary was built is never served to that binary, so the order is: store build, then release. The report lists the guide's differences section, "What else differs" on CodePush and "What differs" on the others, and the items below for the source, each as one line the person confirms before they build. Nothing here waits for them.
 
 Every source:
 
