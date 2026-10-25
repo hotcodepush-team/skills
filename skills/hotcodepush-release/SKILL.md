@@ -66,13 +66,13 @@ It validates the build, hashes it, checks the size limit and asks the API for th
 stdout is an array, one entry per channel:
 
 ```json
-[{ "channelId": "...", "deviceCount": 10000, "reachedDeviceCount": 9995, "estimatedDeviceCount": 9995, "byPlatform": [...], "byBinaryVersion": [...], "warnings": [{ "code": "FINGERPRINT_UNKNOWN", "message": "...", "details": null }] }]
+[{ "channelId": "...", "deviceCount": 10000, "reachedDeviceCount": 9995, "estimatedDeviceCount": 9995, "byPlatform": [...], "byBinaryVersion": [...], "warnings": [{ "code": "fingerprint_unknown", "message": "...", "details": null }] }]
 ```
 
 - `deviceCount` is the channel's active devices, `reachedDeviceCount` those the release's conditions reach, `estimatedDeviceCount` the share at the rollout percentage.
 - `reachedDeviceCount` is `0` while `deviceCount` is above `0`: the conditions exclude every device. Stop and show the person the numbers and the warnings; a release that reaches nobody is almost always a mistake.
-- `FINGERPRINT_UNKNOWN`: no store build registered with HotCodePush carries the native fingerprint this build has, because a native dependency changed since the last store build. The release reaches devices on a matching binary only; the rest need a store build. Continue, and say so in the report.
-- `UNSUPPORTED_CONDITION_SHARE`: a share of the devices run an SDK that does not know one of the release's condition types and will skip it. Continue, and say so in the report.
+- `fingerprint_unknown`: no store build registered with HotCodePush carries the native fingerprint this build has, because a native dependency changed since the last store build. The release reaches devices on a matching binary only; the rest need a store build. Continue, and say so in the report.
+- `unsupported_condition_share`: a share of the devices run an SDK that does not know one of the release's condition types and will skip it. Continue, and say so in the report.
 - A non-zero exit: Step 6.
 
 On React Native and Expo the dry run bundles the JavaScript once and the release bundles it again; that is expected.
@@ -101,23 +101,23 @@ stdout is an array of releases, one per channel, and on React Native and Expo on
 | --- | --- | --- |
 | `0` | Done | Step 7. |
 | `1` | An error, `error.code` on stdout | See the table below. |
-| `2` | A missing or invalid parameter | `E_MISSING_PARAMETER` names the flag: `--path <dir>` when `capacitor.config` sets no `webDir` the CLI can read, `--bundle-version <label>` when `package.json` has no `version`. `E_INVALID_PARAMETER` names the wrong flag or `hotcodepush.json` field; correct it and run again. |
-| `3` | Not logged in, `E_NOT_LOGGED_IN` or the API's `E_UNAUTHENTICATED` | Set `HOTCODEPUSH_TOKEN`, or log in as the hotcodepush-init skill's authentication modes describe. |
-| `4` | A confirmation required, `E_CONFIRMATION_REQUIRED` | `--yes` was left out. |
+| `2` | A missing or invalid parameter | `missing_parameter` names the flag: `--path <dir>` when `capacitor.config` sets no `webDir` the CLI can read, `--bundle-version <label>` when `package.json` has no `version`. `invalid_parameter` names the wrong flag or `hotcodepush.json` field; correct it and run again. |
+| `3` | Not logged in, `not_logged_in` or the API's `unauthenticated` | Set `HOTCODEPUSH_TOKEN`, or log in as the hotcodepush-init skill's authentication modes describe. |
+| `4` | A confirmation required, `confirmation_required` | `--yes` was left out. |
 
 Codes under exit `1`:
 
 | `error.code` | Do this |
 | --- | --- |
-| `E_FINGERPRINT_UNAVAILABLE` | The native fingerprint cannot be computed; `fix` says why: no lockfile, two lockfiles, or `node_modules` out of step with the lockfile. Install the dependencies from the one lockfile and run again. |
-| `E_SIGNING_KEY_UNAVAILABLE` | `hotcodepush.json` lists public keys and no private key was given. Step 1, item 3. |
-| `E_BUNDLE_TOO_LARGE` | A file or the bundle is above 512 MB. Move large media out of the web build; nothing was uploaded. |
-| `E_SIGNATURE_REQUIRED` | The app has a signing key the project does not list. Run `npx hotcodepush signing-key list --json`, add each `publicKey` to `publicKeys` in `hotcodepush.json`, provide the private key, run again. |
-| `E_UNKNOWN_FRAMEWORK`, `E_INVALID_JSON` | The project has no supported framework, or a JSON file does not parse; `message` names it. |
-| `E_NOT_FOUND` | The app or channel in `hotcodepush.json` or `--channel` no longer exists. `npx hotcodepush channel list --json` shows what does. |
-| `E_CLIENT_UPDATE_REQUIRED` | Update the CLI as `message` says. |
+| `fingerprint_unavailable` | The native fingerprint cannot be computed; `fix` says why: no lockfile, two lockfiles, or `node_modules` out of step with the lockfile. Install the dependencies from the one lockfile and run again. |
+| `signing_key_unavailable` | `hotcodepush.json` lists public keys and no private key was given. Step 1, item 3. |
+| `bundle_too_large` | A file or the bundle is above 512 MB. Move large media out of the web build; nothing was uploaded. |
+| `signature_required` | The app has a signing key the project does not list. Run `npx hotcodepush signing-key list --json`, add each `publicKey` to `publicKeys` in `hotcodepush.json`, provide the private key, run again. |
+| `unknown_framework`, `invalid_json` | The project has no supported framework, or a JSON file does not parse; `message` names it. |
+| `not_found` | The app or channel in `hotcodepush.json` or `--channel` no longer exists. `npx hotcodepush channel list --json` shows what does. |
+| `client_update_required` | Update the CLI as `message` says. |
 | Any other API code | `message` carries the fix; relay it. A limit or a role is not solved by a retry. |
-| `E_UNEXPECTED`, `E_UNEXPECTED_RESPONSE` | Run once more with `--verbose`; if it persists, report it at `https://github.com/hotcodepush-team/cli/issues`. |
+| `unexpected`, `unexpected_response` | Run once more with `--verbose`; if it persists, report it at `https://github.com/hotcodepush-team/cli/issues`. |
 
 A run that failed after the upload and before the release leaves an uploaded bundle; running again uploads only what the app lacks, so run again rather than cleaning up.
 A run repeated after success creates another release of the same bundle; that is by design, never an error to retry.
@@ -135,6 +135,6 @@ A run repeated after success creates another release of the same bundle; that is
 
 - `npx` cannot find `hotcodepush`: the CLI is not installed; install it as a dev dependency as `https://hotcodepush.com/docs/cli` names it.
 - The build script fails: report its output and stop; the release is not attempted.
-- `react-native bundle` or `expo export:embed` fails inside the upload, `E_COMMAND_FAILED`: run the command line `message` names by hand from the project root and read its output; usually a missing dependency or an entry file the project renamed.
-- The API answers `E_RATE_LIMITED` or a `5xx`: the client retries three times itself; a failure after that is reported, and the run can be repeated.
+- `react-native bundle` or `expo export:embed` fails inside the upload, `command_failed`: run the command line `message` names by hand from the project root and read its output; usually a missing dependency or an entry file the project renamed.
+- The API answers `rate_limited` or a `5xx`: the client retries three times itself; a failure after that is reported, and the run can be repeated.
 - A `Warning:` line on stderr is information for the report, never a failure.

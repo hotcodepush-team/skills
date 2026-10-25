@@ -180,4 +180,4 @@ Nothing else is edited: `npx expo prebuild` wires the native projects from the p
 
 Nothing to wire: the plugin brings its own Gradle task and Xcode phase.
 When `doctor`'s `hook` check fails, run the command its `manualStep` names, `npx cordova plugin add <spec>`, which lists the plugin in `package.json`'s `cordova.plugins`.
-When `android-file-mode` fails, remove the `AndroidInsecureFileModeEnabled` preference from `config.xml`, from the `<widget>` and from the `<platform name="android">` section alike.
+When `android_file_mode` fails, remove the `AndroidInsecureFileModeEnabled` preference from `config.xml`, from the `<widget>` and from the `<platform name="android">` section alike.
