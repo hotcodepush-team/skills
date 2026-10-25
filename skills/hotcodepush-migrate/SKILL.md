@@ -1,6 +1,6 @@
 ---
 name: hotcodepush-migrate
-description: "Moves an app to HotCodePush from another over-the-air (OTA) update service: Capawesome Cloud (@capawesome/capacitor-live-update), Capgo (@capgo/capacitor-updater), CodePush (react-native-code-push), EAS Update (expo-updates), Hot Updater (hot-updater), Ionic Appflow (@capacitor/live-updates, cordova-plugin-ionic), RevoPush (@revopush/react-native-code-push) or Stallion (react-native-stallion). Detects the source from package.json, freezes the old line on a branch, removes the old client and native config, hands off to hotcodepush-init and hotcodepush-release, maps channels, signing key, binary ranges and defaults, and reports the guide's gotchas as a checklist. Use when asked to migrate, move or switch an app off one of these, or to leave a retired OTA, live-update or code-push service. Do not use to set up a project with no update client (the hotcodepush-init skill), to publish a release (the hotcodepush-release skill) or to debug a device that did not update (the hotcodepush-debug-no-update skill)."
+description: "Moves an app to HotCodePush from another over-the-air (OTA) update service: Capawesome Cloud (@capawesome/capacitor-live-update), Capgo (@capgo/capacitor-updater), Codemagic Patch (@codemagic/react-native-patch, @codemagic/capacitor-patch), CodePush (react-native-code-push, @bitrise/code-push-sdk), EAS Update (expo-updates), Hot Updater (hot-updater), Ionic Appflow (@capacitor/live-updates, cordova-plugin-ionic), RevoPush (@revopush/react-native-code-push) or Stallion (react-native-stallion). Detects the source from package.json, removes the old client and native config, hands off to hotcodepush-init and hotcodepush-release, maps channels, key, ranges and defaults, and reports the guide's gotchas. Use when asked to migrate, move or switch an app off one of these, or to leave a retired OTA, live-update or code-push service. Do not use to set up a project with no update client (hotcodepush-init), to publish a release (hotcodepush-release) or to debug a device that did not update (hotcodepush-debug-no-update)."
 license: MIT
 compatibility: "Requires Node.js 22 or later, git, the project's package manager, network access to api.hotcodepush.com and hotcodepush.com, and a HotCodePush account."
 metadata:
@@ -20,6 +20,7 @@ Every source has a guide that carries the detail, the full CLI and SDK mapping a
 | --- | --- |
 | Capawesome Cloud | `https://hotcodepush.com/docs/migrate/capawesome-cloud` |
 | Capgo | `https://hotcodepush.com/docs/migrate/capgo` |
+| Codemagic Patch | `https://hotcodepush.com/docs/migrate/codemagic-patch` |
 | CodePush | `https://hotcodepush.com/docs/migrate/codepush` |
 | EAS Update | `https://hotcodepush.com/docs/migrate/eas-update` |
 | Hot Updater | `https://hotcodepush.com/docs/migrate/hot-updater` |
@@ -52,7 +53,9 @@ Read the guide before acting: its markdown twin is the URL plus `.md`, or the Ho
 | --- | --- | --- |
 | `@capawesome/capacitor-live-update`; `plugins.LiveUpdate` in `capacitor.config` confirms it | Capawesome Cloud | Capacitor |
 | `@capgo/capacitor-updater`, and `@capgo/cli` beside it | Capgo | Capacitor |
+| `@codemagic/react-native-patch`, or `@codemagic/capacitor-patch` | Codemagic Patch | React Native or Expo, or Capacitor |
 | `react-native-code-push` | CodePush | React Native, or Expo |
+| `@bitrise/code-push-sdk`, or `react-native-code-push` with `CodePushServerURL` (iOS) or `CodePushServerUrl` (Android) on a `*.codepush.bitrise.io` host | CodePush, through the guide's "From Bitrise CodePush" section | React Native, or Expo |
 | `expo-updates`, with `updates.url` in the app config | EAS Update | Expo, or React Native with `expo-updates` |
 | `hot-updater`, or any `@hot-updater/*` package | Hot Updater | React Native, or Expo |
 | `@capacitor/live-updates` | Ionic Appflow | Capacitor |
@@ -76,7 +79,8 @@ Step 3 deletes the files the later steps read, so record these first; they go in
 | --- | --- | --- |
 | Capawesome Cloud | each channel beyond `default`, which is `production` here; the versioned channels, `production-<versionCode>`, collapse into it | `defaultChannel` in `capacitor.config`, `CapawesomeLiveUpdateDefaultChannel` in `Info.plist`, `capawesome_live_update_default_channel` in `build.gradle`, `--channel` on each `apps:liveupdates:upload`, `apps:liveupdates:create` or `apps:deployments:create` of `@capawesome/cli`, and `channel` on each `cloud-live-update-action` step of the pipeline; ask for the rest |
 | Capgo | each channel | `defaultChannel` in `capacitor.config`; ask for the rest |
-| CodePush, RevoPush | each deployment, `Staging` and `Production` by default; RevoPush's `appcenter_Staging` and `appcenter_Production` duplicates collapse into one | the deployment keys per build type in `strings.xml`, `Info.plist` or the build settings; the person names the deployments the keys belong to |
+| Codemagic Patch | each deployment beyond `Production`, `Staging` by default; the iOS app's and the Android app's deployments of one name collapse into one channel | `CodemagicPatchDeploymentKey` in `Info.plist` and `strings.xml`, `deploymentKey` in the config plugin entry or `plugins.CodemagicPatch`, and `PATCH_IOS_DEPLOYMENT_KEY` and `PATCH_ANDROID_DEPLOYMENT_KEY` per build; the person names the deployment each key belongs to |
+| CodePush, RevoPush | each deployment, `Staging` and `Production` by default; RevoPush's `appcenter_Staging` and `appcenter_Production` duplicates collapse into one, as do Bitrise CodePush's iOS and Android deployments of one name | the deployment keys per build type in `strings.xml`, `Info.plist`, the build settings or Bitrise's Expo plugin entry; the person names the deployments the keys belong to |
 | EAS Update | each channel, never a branch | `build.<profile>.channel` in `eas.json` |
 | Hot Updater | each channel | `HOT_UPDATER_CHANNEL`, `com.hotupdater.CHANNEL`, the Expo plugin's `channel`, and the names `checkForUpdate({ channel })` passes |
 | Ionic Appflow | each Live Update channel | `plugins.LiveUpdates.channel`, `IonChannelName`, `ionic_channel_name`, `CHANNEL_NAME` |
@@ -121,6 +125,24 @@ In the report: a web build from the migrated code must never go to Capawesome Cl
 
 In the report: a web build without `notifyAppReady()` must never go to Capgo, since the old builds roll it back after 10 seconds; Capgo hotfixes come from the branch, which alone keeps `.capgo_key_v2`; the Capgo plan stays while the old builds check in and is cancelled last; device overrides, statistics and device ids do not carry over.
 
+#### Codemagic Patch
+
+React Native and Expo:
+
+1. `npm uninstall @codemagic/react-native-patch`.
+2. Export the root component plain instead of `Patch.wrap(App, options)`, replace every call per the guide's "SDK calls" table, and delete `codemagic-patch.config.json`.
+3. Delete `CodemagicPatchDeploymentKey`, `CodemagicPatchApiUrl`, `CodemagicPatchDownloadBaseUrl`, `CodemagicPatchPublicKey` and `CodemagicPatchMaxLaunchAttempts` from `Info.plist` and `strings.xml`, the `$(PATCH_IOS_DEPLOYMENT_KEY)` build setting or `.xcconfig` line, and the `resValue "string", "CodemagicPatchDeploymentKey"` block in `android/app/build.gradle`, which throws without `PATCH_ANDROID_DEPLOYMENT_KEY`.
+4. Put the host files back to the template before the hotcodepush-init skill runs: in the Swift file that overrides `bundleURL()`, `CodemagicPatch.bundleURL() ?? Bundle.main.url(forResource: "main", withExtension: "jsbundle")` becomes `Bundle.main.url(forResource: "main", withExtension: "jsbundle")` again and `import CodemagicPatchClient` goes; in `MainApplication.kt`, `import io.codemagic.patch.CodemagicPatch` and the `jsBundleFilePath = CodemagicPatch.getJSBundleFile(applicationContext)` line, or the `getJSBundleFile()` override, go. `init` replaces the template call inside Patch's line and leaves the import, so the file stops compiling once the pod is gone. Then `pod install` in `ios/`.
+5. On Expo, remove the `@codemagic/react-native-patch` entry from `plugins` and `PATCH_IOS_DEPLOYMENT_KEY` and `PATCH_ANDROID_DEPLOYMENT_KEY` from the build profiles in `eas.json`; an `expo-updates` left installed is removed too, or `updates.enabled` set to `false`.
+
+Capacitor:
+
+1. `npm uninstall @codemagic/capacitor-patch`.
+2. Delete `plugins.CodemagicPatch` from `capacitor.config.ts` or `.json`, and any `CodemagicPatch*` override in `Info.plist` and `strings.xml`.
+3. Remove the `start()` call and every other call per the guide, drop `npx codemagic-patch-check-config` from the native build job, and run `npx cap sync`.
+
+In the report: the old builds read manifests from the person's Patch storage or CDN, so the server, the storage and the CDN stay up while the old builds check in; a bundle from the migrated code never goes to Patch, since it never calls `notifyAppReady()` and the old SDK rolls it back after `maxLaunchAttempts` launches; hotfixes for the old builds come from the branch with `cmpatch release-react --target-binary-version <old version>` or `cmpatch-capacitor release create`; the stack goes down last, once `cmpatch deployment timeseries` or the Patch dashboard and `binary list` show the old builds below the share the person leaves behind; nothing is imported from Patch's metrics or release history.
+
 #### CodePush
 
 1. `npm uninstall react-native-code-push`.
@@ -128,8 +150,9 @@ In the report: a web build without `notifyAppReady()` must never go to Capgo, si
 3. Delete `CodePushDeploymentKey`, `CodePushPublicKey` and `CodePushServerURL` from `Info.plist`; `CodePushDeploymentKey`, `CodePushPublicKey` and `CodePushServerUrl` from `strings.xml`; the `codepush.gradle` `apply from` line in `android/app/build.gradle`.
 4. Put the two host files back to what React Native's template generates for the project's version: the Swift file that overrides `bundleURL()` returns `Bundle.main.url(forResource: "main", withExtension: "jsbundle")` again, and `MainApplication.kt` imports `com.facebook.react.defaults.DefaultReactHost.getDefaultReactHost` again. `init` recognises the template's lines and stops with a manual step on a file it does not.
 5. On Expo, remove the config plugin entry the CodePush setup added to `app.json`; the next prebuild regenerates the native projects.
+6. On Bitrise CodePush, the client is `@bitrise/code-push-sdk`: `npm uninstall` it, remove the `@bitrise/code-push-sdk/expo` entry from `plugins` on Expo, delete `CodePushEnableDeltaUpdates` from `Info.plist` and the `<bool name="CodePushEnableDeltaUpdates">` line from `strings.xml`, which a search for `<string name="CodePush` misses, and delete `.codepush.json`. Its `apply from` line names `@bitrise/code-push-sdk/android/codepush.gradle`.
 
-In the report: the CodePush pipeline keeps releasing from the branch while the old builds have users; the CodePush server or account goes last.
+In the report: the CodePush pipeline keeps releasing from the branch while the old builds have users; the CodePush server or account goes last; on Bitrise CodePush the Release Management apps, their deployments and the `codepush-publish` Steps stay until then, and `HOTCODEPUSH_TOKEN` becomes a Bitrise Secret the store build Workflow gets too.
 
 #### EAS Update
 
@@ -209,7 +232,7 @@ npx hotcodepush channel create --name <name> --if-not-exists --json
 
 - Names take letters, digits, `-` and `_`, one to 64 characters; the guides write them lowercase, `Staging` to `staging`. stdout is the channel with its `id`, `name` and `isDiscoverable`.
 - Add `--discoverable` when the app switches to the channel by name at runtime, as Step 2 recorded, because `setChannel({ name })` resolves discoverable channels alone; Capawesome Cloud's `sync({ channel })` and `fetchLatestBundle({ channel })` become `setChannel({ name })` then `sync()`, so every channel they named is discoverable too. `--if-not-exists` returns an existing channel as it is, without applying the flag: when the flag was wanted and `isDiscoverable` is `false`, run `npx hotcodepush channel update --channel <name> --discoverable --json`.
-- A build flavour that follows another channel than `hotcodepush.json`'s sets `HOTCODEPUSH_CHANNEL=<name>` in its build environment; this replaces Capawesome Cloud's and Capgo's `defaultChannel`, Capawesome Cloud's native default-channel keys, the per-build-type deployment keys, `eas.json`'s `channel`, Appflow's `IonChannelName` and Stallion's per-flavour projects. There is no server-side default channel and no forced channel per device: the channel is stamped into the build, and `release create --device <id>` targets one device.
+- A build flavour that follows another channel than `hotcodepush.json`'s sets `HOTCODEPUSH_CHANNEL=<name>` in its build environment; this replaces Capawesome Cloud's and Capgo's `defaultChannel`, Capawesome Cloud's native default-channel keys, the per-build-type deployment keys, Codemagic Patch's `PATCH_IOS_DEPLOYMENT_KEY` and `PATCH_ANDROID_DEPLOYMENT_KEY`, `eas.json`'s `channel`, Appflow's `IonChannelName` and Stallion's per-flavour projects. There is no server-side default channel and no forced channel per device: the channel is stamped into the build, and `release create --device <id>` targets one device.
 
 #### The signing key
 
@@ -217,7 +240,8 @@ npx hotcodepush channel create --name <name> --if-not-exists --json
 | --- | --- | --- |
 | Capawesome Cloud | `private.pem`, the key `--private-key` named, RSA PKCS #8 | yes; the `publicKey` string of the plugin block does not carry over |
 | Capgo | `.capgo_key_v2` is an encryption key | no; signing is new here, and bundles are no longer confidential |
-| CodePush | the RSA private key `release-react -k` named | yes |
+| Codemagic Patch | the PEM `--private-key-path` named, from `openssl genrsa`, RSA 2,048 bits | yes; `CodemagicPatchPublicKey` and `publicKey` do not carry over |
+| CodePush | the RSA private key `release-react -k` or Bitrise's `push --private-key-path` named | yes |
 | EAS Update | the PEM `eas update --private-key-path` named, RSA-2048 PKCS #1 | yes |
 | Hot Updater | the local `keys/private-key.pem` of at least 2,048 bits | yes; a KMS or remote signer's key cannot be exported |
 | Ionic Appflow | Secure Live Updates' `public_key.pem` | no |
@@ -240,7 +264,8 @@ The fingerprint rides on every release and keeps it off a build whose native cod
 | --- | --- |
 | Capawesome Cloud `--android-min`, `--android-max`, `--ios-min`, `--ios-max`, and the versioned channels | nothing: the fingerprint gates by default; `--binary ">=2.3.0"` over the store version to keep a range |
 | Capgo `--min-update-version 2.0.0` | `--binary ">=2.0.0"` |
-| `-t "1.2.x"`, `deploy -t "1.2.x"` | `--binary "1.2.x"` |
+| Codemagic Patch `--target-binary-version 1.2.3` | `--binary "1.2.3"` only to pin; the fingerprint gates by default, and a release reaches every store version sharing it |
+| `-t "1.2.x"`, Bitrise's `--app-version "1.2.x"`, `deploy -t "1.2.x"` | `--binary "1.2.x"`; Bitrise required the flag on every push, so a pipeline's `APP_TARGET_VERSIONS` can go |
 | `"^1.2.3"` | `--binary ">=1.2.3 <2.0.0"` |
 | `"~1.2.0"` | `--binary ">=1.2.0 <1.3.0"` |
 | `"1.2.3 - 1.2.7"` | `--binary ">=1.2.3 <=1.2.7"` |
@@ -257,6 +282,7 @@ Capawesome Cloud's `--android-eq 5` and `--ios-eq 5` exclude that one build. Dro
 | --- | --- | --- | --- |
 | Capawesome Cloud | `autoUpdateStrategy: 'none'` by default, so the app's own `sync()` starts each cycle; `'background'` checks at start and on resume and applies at the next launch; `readyTimeout` is off unless set; `--rollout-percentage` from 0 to 100; a rollback deployment applies at the next launch | the defaults, `checkStrategy: auto` and `applyStrategy: next-start`, match `'background'`, with a check every 900 seconds in the foreground added; `readyTimeoutSeconds` is 10 with no off switch; auto-pause on every release; `release rollback` is mandatory by default and reloads at once | `checkStrategy: manual` where the strategy was `'none'`; `readyTimeout: 10000` becomes `readyTimeoutSeconds: 10`; `--mandatory false` on `release rollback` keeps the next-launch moment; `mandatoryApplyStrategy: manual` leaves it to the app's `applyUpdate()` |
 | Capgo | applies on the next background by default; rollout random per device, cached 30 days; auto-pause off by default | `applyStrategy: next-start` applies at the next cold start; the rollout bucket is a stable hash of device and release; auto-pause on every release, 5 percent over 50 applied | `applyStrategy: next-resume` with `nextResumeMinimumBackgroundSeconds: 0` is the closest to Capgo's moment |
+| Codemagic Patch | `installMode` `ON_NEXT_RESTART` and `mandatoryInstallMode` `IMMEDIATE` by default; `minimumBackgroundDuration` in milliseconds, 0 by default; `checkFrequency` `ON_APP_START` checks at mount alone; `--disabled` registers a store build's fingerprint; one partial rollout per deployment at a time; `release disable` moves devices back to the previous release | the defaults, `applyStrategy: next-start` and `mandatoryApplyStrategy: immediate`, match; `nextResumeMinimumBackgroundSeconds` in seconds, 300 by default; `checkStrategy: auto` checks at start, on resume and every 900 seconds; the build step registers the binary; rollouts overlap and move either way; `release revoke` is Patch's disable, and `release pause` keeps devices on the release | divide `minimumBackgroundDuration` by 1,000 into `nextResumeMinimumBackgroundSeconds`; `ON_NEXT_SUSPEND` becomes `next-resume`; `--disabled` becomes `--rollout-percentage 0` for a dark release and nothing for the baseline |
 | CodePush | `-d` names the deployment on every call; `-x` makes a disabled release; `rollback` republishes the previous release | `release create` without `--channel` releases to `hotcodepush.json`'s channel, `production`; `--rollout-percentage 0` starts dark and `release rollout` widens; `release rollback` is a new release, mandatory by default, and a device keeps its release when the percentage falls | pass `--channel` where `-d` named another deployment; `-x` becomes `--rollout-percentage 0` |
 | EAS Update | one rollout per branch at a time, the next update waits; no mandatory updates | 100 percent by default; `--mandatory` exists | nothing |
 | Hot Updater | `-f` reloads after the download unless `reloadOnForceUpdate` is `false`; rollout in 0.1 percent steps; `wrap` checks at mount only | `--mandatory` with `mandatoryApplyStrategy: immediate` or `manual`; whole percents; `checkStrategy: auto` checks at start, on resume and every 900 seconds | `checkStrategy: manual` with `sync()` for launch-only |
@@ -281,7 +307,9 @@ Capawesome Cloud: `private.pem` stays where the old pipeline reads it; Electron,
 
 Capgo: `.capgo_key_v2` stays on the hotfix branch alone; no end-to-end encryption, signing only; the channel is in the build and no console switch moves the fleet; `listChannels()` has no equivalent; on the web the package rejects with `UNIMPLEMENTED`, so guard calls with `Capacitor.isNativePlatform()`.
 
-CodePush and RevoPush: every `-d` and `-t` of the pipeline is rewritten per Step 5; on RevoPush a call that left `-d` out passes `--channel staging`.
+Codemagic Patch: the Patch server, storage and CDN stay up while the old builds check in; `--target-binary-version` has no counterpart, and `--binary "1.2.3"` pins a store version when wanted; the readiness gate is `readyTimeoutSeconds`, a window of 10 seconds, not `maxLaunchAttempts` launches; `release disable` maps to `release revoke`, not `release pause`; `isStoreUpdateAvailable` and `latestBinaryVersion` have no equivalent; on Capacitor the entry-file import of Step 4 is the readiness signal, and web calls are guarded with `Capacitor.isNativePlatform()`.
+
+CodePush and RevoPush: every `-d` and `-t` of the pipeline is rewritten per Step 5; on RevoPush a call that left `-d` out passes `--channel staging`; on Bitrise CodePush every `--app-version` goes or becomes `--binary`, the `codepush-publish` Steps become one Script Step, and `HOTCODEPUSH_TOKEN` is a Bitrise Secret the store build Workflow gets too.
 
 EAS Update: `HOTCODEPUSH_TOKEN` is an EAS secret of the store build; the fingerprint hashes the lockfile's native packages and `extraFingerprintPaths` only, never the app config; development builds preview no updates, so QA moves to release builds on preview channels; `EXPO_PUBLIC_*` values must be in the release job's environment, since the upload bundles locally with `expo export:embed`.
 
@@ -293,7 +321,7 @@ Stallion: the app version is bumped; `--ci-token` becomes `HOTCODEPUSH_TOKEN` in
 
 ### Step 7: Release and report
 
-1. Replace the old pipeline step with the one line the guides' pipeline step uses, `npx hotcodepush release create --bundle-version "$(git rev-parse --short HEAD)" --yes`, with `npm run build &&` in front on Capacitor and Cordova: `@capawesome/cli apps:liveupdates:upload`, `apps:liveupdates:create`, `apps:builds:create --platform web` with `apps:deployments:create --channel`, or the `cloud-live-update-action` step, `@capgo/cli bundle upload`, `appcenter codepush release-react`, `eas update`, `hot-updater deploy -p` per platform, `appflow deploy web`, `revopush release-react` per platform, or Stallion's `publish-bundle`, `release-bundle` and `update-release` per platform. One run covers both platforms. The secrets become `HOTCODEPUSH_TOKEN` and, for a signing app, `HOTCODEPUSH_SIGNING_KEY`.
+1. Replace the old pipeline step with the one line the guides' pipeline step uses, `npx hotcodepush release create --bundle-version "$(git rev-parse --short HEAD)" --yes`, with `npm run build &&` in front on Capacitor and Cordova: `@capawesome/cli apps:liveupdates:upload`, `apps:liveupdates:create`, `apps:builds:create --platform web` with `apps:deployments:create --channel`, or the `cloud-live-update-action` step, `@capgo/cli bundle upload`, `cmpatch release-react` per platform or `cmpatch-capacitor release create`, `appcenter codepush release-react` or Bitrise's `codepush-publish` Step and `bitrise :codepush push --bundle` per platform, `eas update`, `hot-updater deploy -p` per platform, `appflow deploy web`, `revopush release-react` per platform, or Stallion's `publish-bundle`, `release-bundle` and `update-release` per platform. One run covers both platforms. The secrets become `HOTCODEPUSH_TOKEN` and, for a signing app, `HOTCODEPUSH_SIGNING_KEY`.
 2. Run `npx hotcodepush binary list --json`. stdout is `{ "binaries": [...], "nextOffset": ... }`, each binary with its `version`, `build` and `platform`, and every one is a store build that ran the HotCodePush build step, since the old client registered none. `binaries` holds one: run the hotcodepush-release skill for the first release, with `--channel` from Step 5 where the pipeline named a channel other than `hotcodepush.json`'s, and no `--binary` unless the person asks, since the old ranges named old store versions. `binaries` is empty: no store build with the SDK exists yet; the first release is the hotcodepush-release skill's once one does, and the report says so.
 3. Report, in this order: the source and the branch; what Step 2 recorded; what was removed, file by file; what `init` did; the channels created and the key added; the binary ranges and defaults rewritten; the checklist of Step 6; the "In the report" line of the source, what the old service still serves and when to shut it down; the secret files left in place and where they go; whether the first release ran or waits for the store build.
 4. List the files that changed for the person to review and commit.
