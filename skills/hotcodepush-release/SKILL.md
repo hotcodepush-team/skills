@@ -2,7 +2,7 @@
 name: hotcodepush-release
 description: "Builds, uploads and releases an over-the-air (OTA) update with the HotCodePush CLI: runs the project's build where the framework needs one (Capacitor and Cordova), previews the audience with hotcodepush release create --dry-run --json, publishes with hotcodepush release create --yes --json, labels the bundle from the commit in CI, and reports the release number, the audience and every warning. Use when asked to release, publish, ship or deploy an OTA update, a live update or a code-push bundle to a channel. Do not use to set up a project that has no hotcodepush.json (the hotcodepush-init skill), to pause, revoke or roll back an existing release, or to debug a device that did not update (the hotcodepush-debug-no-update skill)."
 license: MIT
-compatibility: "Requires Node.js 22 or later, a project set up with hotcodepush init, a credential (HOTCODEPUSH_TOKEN or a stored login) and network access to api.hotcodepush.com."
+compatibility: "Requires Node.js 22 or later, a project set up with hotcodepush init, a credential (HOTCODEPUSH_TOKEN or a stored login) and network access to api.hotcodepush.com, or to the API HOTCODEPUSH_API_URL names."
 metadata:
   author: hotcodepush-team
   source: https://github.com/hotcodepush-team/skills/tree/main/skills/hotcodepush-release
@@ -15,7 +15,7 @@ Publish an update with HotCodePush, the over-the-air (OTA) update platform for R
 
 ## Rules
 
-- Run every CLI command with `--json`, and the release with `--yes`. Without them the CLI prompts and the run hangs.
+- Run every CLI command with `--json`, and the release with `--yes`. Without `--json` the CLI may prompt and the run hangs; without `--yes` the release exits `4`.
 - Parse stdout as one JSON document. Diagnostics go to stderr: the packaging the CLI runs, lines starting with `Warning:`, the notices.
 - Never print, log or commit a token or a private key. A signing key reaches the CLI through `HOTCODEPUSH_SIGNING_KEY` or `--private-key-path <file>`; never read the file.
 - Never invent a channel, a rollout percentage or a condition. Pass a flag only when the person asked for what it does.
@@ -47,12 +47,12 @@ On React Native and Expo the dependencies must be installed, since the CLI runs 
 
 - `--channel <id|name>`: only when the person names a channel other than `hotcodepush.json`'s; repeatable for several.
 - `--bundle-version <label>`: the bundle's version label, `package.json`'s `version` by default. In CI (the `CI` variable is set), pass `<version>+<short commit sha>`, for example `1.4.2+a1b2c3d`, so every pipeline run carries its own label; without a `version` in `package.json`, pass the short sha alone.
-- `--rollout-percentage <0-100>`, `--progress`, `--mandatory`, `--notes "<text>"`, `--binary "<range>"`, `--os "<range>"`, `--attribute key=value`, `--device <id>`, `--platform ios|android`: pass each only when the person asked for what it does.
+- `--rollout-percentage <0-100>`, `--progression` (with `--progression-percentages`, `--progression-minimum-seconds` and `--progression-minimum-update-count` to change its defaults), `--mandatory`, `--notes "<text>"`, `--binary "<range>"`, `--os "<range>"`, `--attribute key=value`, `--device <id>`, `--platform ios|android`: pass each only when the person asked for what it does.
 - `--private-key-path <file>`: from Step 1, when the app signs and the key is not in `HOTCODEPUSH_SIGNING_KEY`.
 - `--git-sha`, `--git-ref`, `--git-message`: in a pipeline without a git checkout, so the release still records its commit; `--no-git` turns detection off.
 
 The commit is recorded on the bundle in any case: sha, ref, message, dirty flag.
-Working-tree changes not committed make the release carry `isGitDirty: true`; say so in the report.
+Working-tree changes not committed make the release's `bundle.isGitDirty` `true`; say so in the report.
 
 ### Step 4: Preview the audience
 
@@ -72,7 +72,7 @@ stdout is an array, one entry per channel:
 - `deviceCount` is the channel's active devices, `reachedDeviceCount` those the release's conditions reach, `estimatedDeviceCount` the share at the rollout percentage.
 - `reachedDeviceCount` is `0` while `deviceCount` is above `0`: the conditions exclude every device. Stop and show the person the numbers and the warnings; a release that reaches nobody is almost always a mistake.
 - `fingerprint_unknown`: no store build registered with HotCodePush carries the native fingerprint this build has, because a native dependency changed since the last store build. The release reaches devices on a matching binary only; the rest need a store build. Continue, and say so in the report.
-- `unsupported_condition_share`: a share of the devices run an SDK that does not know one of the release's condition types and will skip it. Continue, and say so in the report.
+- `unsupported_condition_share`: a share of the devices run an SDK that does not know one of the release's condition types; those devices do not get the release until their app ships a newer SDK. Continue, and say so in the report.
 - A non-zero exit: Step 6.
 
 On React Native and Expo the dry run bundles the JavaScript once and the release bundles it again; that is expected.
@@ -88,10 +88,10 @@ npx hotcodepush release create --yes --json
 stdout is an array of releases, one per channel, and on React Native and Expo one per platform and channel:
 
 ```json
-[{ "id": "...", "number": 43, "channelId": "...", "bundleId": "...", "rolloutPercentage": 100, "status": "active", "liveAt": "2026-10-20T10:00:00.000Z", "isMandatory": false, "progression": null }]
+[{ "id": "...", "number": 43, "channelId": "...", "bundleId": "...", "rolloutPercentage": 100, "status": "active", "liveAt": "2026-10-20T10:00:00.000Z", "isMandatory": false, "progression": null, "bundle": { "number": 17, "version": "1.4.2", "gitSha": "...", "gitRef": "...", "gitMessage": "...", "isGitDirty": false }, "channel": { "name": "production" } }]
 ```
 
-- `number` is the release's number in its channel; it is printed as `#43`.
+- `number` is the release's number in its channel; it is printed as `#43`. `bundle` and `channel` are embedded; the audience is not, Step 4 holds it.
 - `liveAt` is set once the channel's index is written, which the CLI waits up to sixty seconds for. `null` means it is not live yet: run `npx hotcodepush release get --channel <channel> --release <number> --json` every few seconds until `liveAt` is set, at most a minute more, then report it as pending.
 - `Warning:` lines on stderr carry the audience warnings again; relay them.
 
@@ -112,29 +112,31 @@ Codes under exit `1`:
 | `fingerprint_unavailable` | The native fingerprint cannot be computed; `fix` says why: no lockfile, two lockfiles, or `node_modules` out of step with the lockfile. Install the dependencies from the one lockfile and run again. |
 | `signing_key_unavailable` | `hotcodepush.json` lists public keys and no private key was given. Step 1, item 3. |
 | `bundle_too_large` | A file or the bundle is above 512 MB. Move large media out of the web build; nothing was uploaded. |
-| `signature_required` | The app has a signing key the project does not list. Run `npx hotcodepush signing-key list --json`, add each `publicKey` to `publicKeys` in `hotcodepush.json`, provide the private key, run again. |
+| `signature_required` | The app has a signing key the project does not list. Run `npx hotcodepush signing-key list --json`, add each `signingKeys[].publicKey` to `publicKeys` in `hotcodepush.json`, provide the private key, run again. |
 | `unknown_framework`, `invalid_json` | The project has no supported framework, or a JSON file does not parse; `message` names it. |
 | `not_found` | The app or channel in `hotcodepush.json` or `--channel` no longer exists. `npx hotcodepush channel list --json` shows what does. |
 | `client_update_required` | Update the CLI as `message` says. |
+| `plan_required` | The plan does not include the feature; `message` names the plan that does. Relay it; never retry. |
 | Any other API code | `message` carries the fix; relay it. A limit or a role is not solved by a retry. |
-| `unexpected`, `unexpected_response` | Run once more with `--verbose`; if it persists, report it at `https://github.com/hotcodepush-team/cli/issues`. |
+| `unexpected_response` | The API answered something the CLI does not understand. Check `HOTCODEPUSH_API_URL` or the API URL in `config.json` and the network; if it persists, report it at `https://github.com/hotcodepush-team/cli/issues`. |
+| `unexpected` | Run once more with `--verbose`; if it persists, report it at `https://github.com/hotcodepush-team/cli/issues`. |
 
 A run that failed after the upload and before the release leaves an uploaded bundle; running again uploads only what the app lacks, so run again rather than cleaning up.
 A run repeated after success creates another release of the same bundle; that is by design, never an error to retry.
 
 ### Step 7: Report
 
-1. The release: `#<number>` in channel `<name>`, the bundle label, the rollout percentage and progression, mandatory or not, live since `liveAt`.
+1. The release: `#<number>` in channel `channel.name`, the bundle as `#<bundle.number> · <bundle.version>`, the rollout percentage and progression, mandatory or not, live since `liveAt`.
 2. The audience from Step 4: reached of total, and every warning with what it means.
-3. The commit the release carries, and that the working tree was dirty when it was.
+3. The commit the release carries, `bundle.gitSha`, and that the working tree was dirty when `bundle.isGitDirty` is `true`.
 4. What devices do: by default they check at start and resume and apply the update at the next cold start; the person closes the app completely and reopens it to see the change. A mandatory release applies at once.
-5. How to watch it: `npx hotcodepush release get --channel <channel> --release <number> --json` shows `releaseCounters` (`attemptedUpdateCount`, `appliedUpdateCount`, the failure counts) and the progression step; a device that did not update is the hotcodepush-debug-no-update skill's case.
-6. For a pipeline: the same command, `npx hotcodepush release create --yes`, with `HOTCODEPUSH_TOKEN` and, when the app signs, `HOTCODEPUSH_SIGNING_KEY` as secrets, and `release create --dry-run` in the pull-request pipeline, which holds no secret.
+5. How to watch it: `npx hotcodepush release get --channel <channel> --release <number> --json` shows `releaseCounters` (`appliedUpdateCount`, `confirmedUpdateCount` and the `*FailureCount` fields by reason) and the progression step; a device that did not update is the hotcodepush-debug-no-update skill's case.
+6. For a pipeline: the same command, `npx hotcodepush release create --yes`, with `HOTCODEPUSH_TOKEN` and, when the app signs, `HOTCODEPUSH_SIGNING_KEY` as secrets, and `release create --dry-run` in the pull-request pipeline, which needs `HOTCODEPUSH_TOKEN` but not the signing key.
 
 ## Error Handling
 
-- `npx` cannot find `hotcodepush`: the CLI is not installed; install it as a dev dependency as `https://hotcodepush.com/docs/cli` names it.
+- `npx` cannot find `hotcodepush`: the CLI is not installed. Install it as a dev dependency with the project's package manager, `npm install --save-dev hotcodepush`.
 - The build script fails: report its output and stop; the release is not attempted.
 - `react-native bundle` or `expo export:embed` fails inside the upload, `command_failed`: run the command line `message` names by hand from the project root and read its output; usually a missing dependency or an entry file the project renamed.
-- The API answers `rate_limited` or a `5xx`: the client retries three times itself; a failure after that is reported, and the run can be repeated.
+- The API answers `rate_limited` or a `5xx`: the client tries three times itself; a failure after that is reported, and the run can be repeated.
 - A `Warning:` line on stderr is information for the report, never a failure.

@@ -1,6 +1,6 @@
 ---
 name: hotcodepush-migrate
-description: "Moves an app to HotCodePush from another over-the-air (OTA) update service: Capawesome Cloud (@capawesome/capacitor-live-update), Capgo (@capgo/capacitor-updater), Codemagic Patch (@codemagic/react-native-patch, @codemagic/capacitor-patch), CodePush (react-native-code-push, @bitrise/code-push-sdk), EAS Update (expo-updates), Hot Updater (hot-updater), Ionic Appflow (@capacitor/live-updates, cordova-plugin-ionic), RevoPush (@revopush/react-native-code-push) or Stallion (react-native-stallion). Detects the source from package.json, removes the old client and native config, hands off to hotcodepush-init and hotcodepush-release, maps channels, key, ranges and defaults, and reports the guide's gotchas. Use when asked to migrate, move or switch an app off one of these, or to leave a retired OTA, live-update or code-push service. Do not use to set up a project with no update client (hotcodepush-init), to publish a release (hotcodepush-release) or to debug a device that did not update (hotcodepush-debug-no-update)."
+description: "Moves an app to HotCodePush from another over-the-air (OTA) update service: Capawesome Cloud (@capawesome/capacitor-live-update), Capgo (@capgo/capacitor-updater), Codemagic Patch (@codemagic/react-native-patch, @codemagic/capacitor-patch), CodePush (react-native-code-push, @bitrise/code-push-sdk), EAS Update (expo-updates), Hot Updater (hot-updater), Ionic Appflow (@capacitor/live-updates, cordova-plugin-ionic), RevoPush (@revopush/react-native-code-push) or Stallion (react-native-stallion). Detects the source from package.json, removes the old client and native config, hands off to the sibling skills, and maps channels, key, ranges and defaults. Use when asked to migrate, move or switch an app off one of these, or to leave a retired service for OTA updates, live updates or code push. Do not use to set up a project with no update client (the hotcodepush-init skill), to publish a release (the hotcodepush-release skill) or to debug a device that did not update (the hotcodepush-debug-no-update skill)."
 license: MIT
 compatibility: "Requires Node.js 22 or later, git, the project's package manager, network access to api.hotcodepush.com and hotcodepush.com, and a HotCodePush account."
 metadata:
@@ -47,7 +47,7 @@ Read the guide before acting: its markdown twin is the URL plus `.md`, or the Ho
 ### Step 1: Detect the source
 
 1. Find the project root, the directory holding `package.json`. Run every command from there.
-2. Read `dependencies` and `devDependencies` and match them against the table. Note the framework, which the hotcodepush-init skill detects the same way.
+2. Read `dependencies` and `devDependencies` and match them against the table. Note the framework. The CLI detects it in the order Capacitor, Cordova, Expo, React Native, so a bare React Native app that lists `expo` counts as Expo until Step 4 says otherwise.
 
 | Package | Source | Framework |
 | --- | --- | --- |
@@ -56,7 +56,7 @@ Read the guide before acting: its markdown twin is the URL plus `.md`, or the Ho
 | `@codemagic/react-native-patch`, or `@codemagic/capacitor-patch` | Codemagic Patch | React Native or Expo, or Capacitor |
 | `react-native-code-push` | CodePush | React Native, or Expo |
 | `@bitrise/code-push-sdk`, or `react-native-code-push` with `CodePushServerURL` (iOS) or `CodePushServerUrl` (Android) on a `*.codepush.bitrise.io` host | CodePush, through the guide's "From Bitrise CodePush" section | React Native, or Expo |
-| `expo-updates`, with `updates.url` in the app config | EAS Update | Expo, or React Native with `expo-updates` |
+| `expo-updates`, with `updates.url` in the app config | EAS Update | React Native with `expo-updates`, or Expo |
 | `hot-updater`, or any `@hot-updater/*` package | Hot Updater | React Native, or Expo |
 | `@capacitor/live-updates` | Ionic Appflow | Capacitor |
 | `cordova-plugin-ionic` in `cordova.plugins` | Ionic Appflow | Cordova |
@@ -64,7 +64,7 @@ Read the guide before acting: its markdown twin is the URL plus `.md`, or the Ho
 | `react-native-stallion`, and `expo-stallion-plugin` and `stallion-cli` beside it | Stallion | React Native, or Expo |
 
 3. None matches: ask the person which service the app used, and which package; a Cordova app on CodePush is outside the CodePush guide, which points it at `https://hotcodepush.com/docs/sdks/cordova/installation`. Several match, for instance `expo-updates` beside `react-native-stallion`: ask which one serves the app's updates; the others are removed as leftovers in Step 3. `expo-updates` without `updates.url`: ask whether the app ever used EAS Update; without it, the package is a leftover.
-4. Check the floor before removing anything: React Native 0.82 or later on the New Architecture, Expo SDK 55 to 58, Capacitor 7 or 8, Cordova with `cordova-android` 14 or 15 on `cordova-ios` 8 (`https://hotcodepush.com/docs/supported-versions`). Below it, stop and say the framework upgrade comes first.
+4. Check the floor before removing anything: React Native 0.82 or later on the New Architecture, Expo SDK 55 to 58, Capacitor 7 or 8, Cordova with `cordova-android` 14 or 15 on `cordova-ios` 8, and iOS 15 or later, which a Capacitor 7 app on CocoaPods raises its deployment target to (`https://hotcodepush.com/docs/supported-versions`). Below it, stop and say the framework upgrade comes first.
 5. On Capawesome Cloud, ask whether the person stays, moves or combines, the three paths of the guide's "Which product fits" section, before anything is removed. Stay keeps the native builds, the store publishing and the updates in one console, and is the path for Electron, Ionic Portals, self-hosted bundles, a reverse proxy or Capacitor 6, which HotCodePush lacks. Move takes the updates to HotCodePush because the update path itself is the reason. Combine keeps the native builds and the store deployments on Capawesome Cloud and moves the updates alone; the web builds, the channel deployments and the plugin go. Stop on stay. Continue on move or combine; on combine, the report tells the person to add `HOTCODEPUSH_TOKEN` as an environment secret of the Capawesome Cloud build, which runs the HotCodePush build step; the skill sets nothing on Capawesome Cloud.
 6. On Ionic Appflow, ask whether the app also built on Appflow or published to the stores from it. If so, say that Capawesome Cloud replaces all three, as the guide's "Which product fits" section describes, and continue only when the person chooses HotCodePush for the updates.
 7. Read the source's guide, as the table above names it.
@@ -209,7 +209,7 @@ In the report: Stallion matches an exact app version, so the app version is bump
 
 ### Step 4: Set up with hotcodepush-init
 
-1. Run the hotcodepush-init skill. It runs `hotcodepush init --yes --json`, which installs the package for the framework, writes `hotcodepush.json` and wires the build step, and it repeats `hotcodepush doctor --json` until it is clean. A host file it does not recognise means Step 3 left a line of the old client in it.
+1. Run the hotcodepush-init skill. It runs `hotcodepush init --yes --json`, which installs the package for the framework, writes `hotcodepush.json` and wires the build step, and it repeats `hotcodepush doctor --json` until it is clean. A host file it does not recognise means Step 3 left a line of the old client in it. A bare React Native app, one with `ios/` and `android/` in git and no prebuild, that still lists `expo` among its dependencies is detected as Expo: have the skill pass `--framework react_native`.
 2. The skill never runs `signing-key create`. Whether the key carries over or the person wants a new one is Step 5.
 3. On Capacitor, import the package in the app's entry file, the module that runs at every start, even when the app calls no method; `init` does not add it. The import is the readiness signal: an app that imports it late or not at all confirms no update, and every one is rolled back.
 
@@ -258,7 +258,7 @@ stdout is the key with its `id` and `fingerprint`, and `publicKeys` in `hotcodep
 
 #### Binary ranges
 
-The fingerprint rides on every release and keeps it off a build whose native code differs; `--binary` narrows a release to store versions on top of it. A release without `--binary` reaches every store version with the same fingerprint, where RevoPush targeted the exact store version unless `-t` widened it. The syntax takes no `^`, `~` or hyphen range; the API refuses one with the validation rule `range_syntax`. Rewrite each range Step 2 recorded:
+The fingerprint rides on every release and keeps it off a build whose native code differs; `--binary` narrows a release to store versions on top of it. A release without `--binary` reaches every store version with the same fingerprint, where RevoPush targeted the exact store version unless `-t` widened it. The syntax takes no `^`, `~` or hyphen range; the API refuses one with `validation`, its rule being `range_syntax`, and the CLI checks nothing before the upload. Rewrite each range Step 2 recorded:
 
 | Old | HotCodePush |
 | --- | --- |
@@ -296,7 +296,7 @@ A release created before a binary was built is never served to that binary, so t
 
 Every source:
 
-- The readiness gate has no off switch: a release that has not rendered within `readyTimeoutSeconds`, 10 by default, is rolled back on that device and never tried there again. For a slow first render, raise `readyTimeoutSeconds` in `hotcodepush.json`.
+- The readiness gate has no off switch: a release that has not rendered within `readyTimeoutSeconds`, 10 by default, is rolled back on that device and never applied there again. For a slow first render, raise `readyTimeoutSeconds` in `hotcodepush.json`.
 - The fingerprint replaces hand-set native versions; a native dependency change needs a store build.
 - `release rollback` publishes the previous bundle as a new release, mandatory by default; `release revoke` ends a release.
 - The build machine holds `npx hotcodepush login` or `HOTCODEPUSH_TOKEN`; under `CI` a store build without a token fails. `npx hotcodepush binary list --json` shows the registered builds.
@@ -322,7 +322,7 @@ Stallion: the app version is bumped; `--ci-token` becomes `HOTCODEPUSH_TOKEN` in
 ### Step 7: Release and report
 
 1. Replace the old pipeline step with the one line the guides' pipeline step uses, `npx hotcodepush release create --bundle-version "$(git rev-parse --short HEAD)" --yes`, with `npm run build &&` in front on Capacitor and Cordova: `@capawesome/cli apps:liveupdates:upload`, `apps:liveupdates:create`, `apps:builds:create --platform web` with `apps:deployments:create --channel`, or the `cloud-live-update-action` step, `@capgo/cli bundle upload`, `cmpatch release-react` per platform or `cmpatch-capacitor release create`, `appcenter codepush release-react` or Bitrise's `codepush-publish` Step and `bitrise :codepush push --bundle` per platform, `eas update`, `hot-updater deploy -p` per platform, `appflow deploy web`, `revopush release-react` per platform, or Stallion's `publish-bundle`, `release-bundle` and `update-release` per platform. One run covers both platforms. The secrets become `HOTCODEPUSH_TOKEN` and, for a signing app, `HOTCODEPUSH_SIGNING_KEY`.
-2. Run `npx hotcodepush binary list --json`. stdout is `{ "binaries": [...], "nextOffset": ... }`, each binary with its `version`, `build` and `platform`, and every one is a store build that ran the HotCodePush build step, since the old client registered none. `binaries` holds one: run the hotcodepush-release skill for the first release, with `--channel` from Step 5 where the pipeline named a channel other than `hotcodepush.json`'s, and no `--binary` unless the person asks, since the old ranges named old store versions. `binaries` is empty: no store build with the SDK exists yet; the first release is the hotcodepush-release skill's once one does, and the report says so.
+2. Run `npx hotcodepush binary list --json`. stdout is `{ "binaries": [...], "nextOffset": ... }`, each binary with its `version`, `build` and `platform`, and every one is a store build that ran the HotCodePush build step, since the old client registered none. `binaries` holds one or more: run the hotcodepush-release skill for the first release, with `--channel` from Step 5 where the pipeline named a channel other than `hotcodepush.json`'s, and no `--binary` unless the person asks, since the old ranges named old store versions. `binaries` is empty: no store build with the SDK exists yet; the first release is the hotcodepush-release skill's once one does, and the report says so.
 3. Report, in this order: the source and the branch; what Step 2 recorded; what was removed, file by file; what `init` did; the channels created and the key added; the binary ranges and defaults rewritten; the checklist of Step 6; the "In the report" line of the source, what the old service still serves and when to shut it down; the secret files left in place and where they go; whether the first release ran or waits for the store build.
 4. List the files that changed for the person to review and commit.
 
@@ -331,7 +331,7 @@ Stallion: the app version is bumped; `--ci-token` becomes `HOTCODEPUSH_TOKEN` in
 - `git branch` refuses the name because it exists: an earlier run made it; keep it and say so. No repository: stop and say the old line cannot be frozen.
 - `hotcodepush init` stops with `native_project` or `xcode_project` after Step 3: a line of the old client is still in the host file `message` names. Remove it as the source's section says, then run the hotcodepush-init skill again.
 - `npx expo prebuild` refuses with `HotCodePush and expo-updates cannot both serve updates.`: `expo-updates` is still listed with `updates.enabled` not `false`. Finish the EAS Update section of Step 3.
-- `release create` is refused with the validation rule `range_syntax`: the `--binary` range still carries `^`, `~` or a hyphen. Rewrite it per Step 5.
+- `release create` is refused with `validation` and a `message` naming the `--binary` range: it still carries `^`, `~` or a hyphen. Rewrite it per Step 5.
 - `signing-key add` exits with `invalid_parameter`: the file cannot be read, is encrypted, or holds no RSA key of at least 2,048 bits as PKCS #8 or PKCS #1; `message` says which. Relay it; the person decides between another file and `signing-key create`.
 - Every device still shows the old version after the release: the hotcodepush-debug-no-update skill; cause 9 there, `release_older_than_binary`, is a release created before the store build.
 - The guide's URL is not reachable: the HotCodePush MCP server's `get_doc_page` tool answers with the page; without either, stop and say the guide could not be read, rather than acting on this file alone.

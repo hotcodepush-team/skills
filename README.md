@@ -21,7 +21,7 @@ Each skill is a procedure over the HotCodePush CLI's `--json` output, so the age
 | [`hotcodepush-init`](./skills/hotcodepush-init/)                       | Sets OTA updates up in an existing project and repeats `hotcodepush doctor` until it is clean.                         |
 | [`hotcodepush-release`](./skills/hotcodepush-release/)                 | Builds where the framework needs it, previews the audience, publishes the release and reports it.                      |
 | [`hotcodepush-debug-no-update`](./skills/hotcodepush-debug-no-update/) | Finds out why a device did not update: a decision procedure over `device probe` and `doctor`, each cause with its fix. |
-| [`hotcodepush-migrate`](./skills/hotcodepush-migrate/)                 | Moves an app off another OTA service: removes the old client, hands off to `init` and `release`, maps the channels.    |
+| [`hotcodepush-migrate`](./skills/hotcodepush-migrate/)                 | Moves an app off another OTA service: freezes the old line on a branch, removes the old client, hands off to `hotcodepush-init` and `hotcodepush-release`, maps the channels. |
 
 Prompts that trigger them, in any agent:
 
@@ -34,7 +34,7 @@ Migrate this app from CodePush to HotCodePush.
 
 ## Documentation
 
-See [hotcodepush.com/docs/ai](https://hotcodepush.com/docs/ai) for the agent setup, and [hotcodepush.com/docs](https://hotcodepush.com/docs) for everything else.
+See [hotcodepush.com/docs/ai/skills](https://hotcodepush.com/docs/ai/skills) for the agent setup, and [hotcodepush.com/docs](https://hotcodepush.com/docs) for everything else.
 
 ## Development
 
