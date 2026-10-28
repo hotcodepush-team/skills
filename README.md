@@ -6,8 +6,6 @@ The Agent Skills an AI coding agent installs to set up, release and debug update
 
 ## Installation
 
-Install the skills with the [skills](https://skills.sh/) command:
-
 ```sh
 npx skills add hotcodepush-team/skills
 ```
@@ -18,12 +16,12 @@ Update them later with `npx skills update`.
 
 Each skill is a procedure over the HotCodePush CLI's `--json` output, so the agent runs it unattended and stops only where a person must approve something.
 
-| Skill | What it does |
-| ----- | ------------ |
-| [`hotcodepush-init`](./skills/hotcodepush-init/) | Sets OTA updates up in an existing project: runs `hotcodepush init --yes --json`, handles the sign-in, performs every manual step the CLI stops on and repeats `hotcodepush doctor --json` until it is clean. |
-| [`hotcodepush-release`](./skills/hotcodepush-release/) | Builds where the framework needs it, previews the audience with `release create --dry-run --json`, publishes with `release create --yes --json` and reports the release, the audience and the warnings. |
-| [`hotcodepush-debug-no-update`](./skills/hotcodepush-debug-no-update/) | Finds out why a device did not update: the nineteen causes as a decision procedure over `device probe --json` and `doctor --json`, each with its reason code, the field that shows it and the fix. |
-| [`hotcodepush-migrate`](./skills/hotcodepush-migrate/) | Moves an app off Capawesome Cloud, Capgo, Codemagic Patch, CodePush, EAS Update, Hot Updater, Ionic Appflow, RevoPush or Stallion: detects the source from `package.json`, records what carries over, freezes the old line on a branch, removes the old client and its native configuration, hands off to `hotcodepush-init` and `hotcodepush-release`, maps the channels, the signing key, the binary ranges and the defaults, and reports the guide's gotchas as a checklist. |
+| Skill                                                                  | What it does                                                                                                           |
+| ---------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| [`hotcodepush-init`](./skills/hotcodepush-init/)                       | Sets OTA updates up in an existing project and repeats `hotcodepush doctor` until it is clean.                         |
+| [`hotcodepush-release`](./skills/hotcodepush-release/)                 | Builds where the framework needs it, previews the audience, publishes the release and reports it.                      |
+| [`hotcodepush-debug-no-update`](./skills/hotcodepush-debug-no-update/) | Finds out why a device did not update: a decision procedure over `device probe` and `doctor`, each cause with its fix. |
+| [`hotcodepush-migrate`](./skills/hotcodepush-migrate/)                 | Moves an app off another OTA service: removes the old client, hands off to `init` and `release`, maps the channels.    |
 
 Prompts that trigger them, in any agent:
 
@@ -40,14 +38,15 @@ See [hotcodepush.com/docs/ai](https://hotcodepush.com/docs/ai) for the agent set
 
 ## Development
 
-Pure Markdown: no build.
-The check CI runs validates each skill's folder shape and frontmatter, with `yaml` as its one dependency:
+Pure Markdown, no build. The check validates each skill's folder shape and frontmatter, and CI runs it:
 
 ```sh
 nvm use
 npm ci
 npm run check
 ```
+
+`CLAUDE.md` holds the rules a skill follows.
 
 ## License
 
