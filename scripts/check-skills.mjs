@@ -1,5 +1,4 @@
 #!/usr/bin/env node
-// Checks every skill under skills/: the folder shape and the SKILL.md frontmatter the Agent Skills spec requires.
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { parse } from 'yaml';
@@ -88,9 +87,6 @@ function checkFrontmatter(skillName, skillText) {
   }
 }
 
-/**
- * The YAML between the two `---` lines that open SKILL.md, an empty object when that block is empty, undefined when there is no block.
- */
 function parseFrontmatter(skillText) {
   const match = /^---\n([\s\S]*?)\n---\n/.exec(skillText);
   if (match === null) {

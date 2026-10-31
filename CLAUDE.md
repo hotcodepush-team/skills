@@ -38,3 +38,11 @@ scripts/check-skills.mjs    the check: SKILL.md present, name equals the folder,
 - Commits are conventional commits; `main` is trunk and CI is the gate.
 - Commit only when the owner says "commit", push only on "push", each time separately.
 - Never place internal company information or customer data in this repo; it is public.
+
+## Comments
+
+- Comment only what the code cannot say: the why behind a choice, an outside quirk or limit, what a regex matches, a TODO with its issue link. Never what the code does.
+- Before adding a comment, try a clearer name or a small extracted function first.
+- One or two short plain sentences. Capital letter, full stop, own line above the code. No run-on sentences, no chains of possessives.
+- Doc comments (JSDoc, KDoc, `///`, docstrings) only on a package's public API: one line that says what it does, then only what a caller must know.
+- Never: section banners, commented-out code, change history, the same comment in two places.
