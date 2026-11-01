@@ -140,8 +140,8 @@ Shows: every check on the device says `skipped` with `build_debug`; the probe sh
 Fix: test on a release build, or on a development build that follows its own channel.
 
 **13. The channel does not resolve.** Occasional, mostly on preview and tenant setups.
-Shows: `failed` with `channel_unknown` on the device for a `setChannel({ name })` the app cannot resolve; `npx hotcodepush channel list --json` prints `isDiscoverable`, and no channel is discoverable until flagged. A deleted or expired channel makes the probe exit before it reads an index: `invalid_parameter` for a name, `not_found` for an id or for a device whose channel is gone; the device keeps what it runs.
-Fix: `npx hotcodepush channel update --channel <name> --discoverable --yes`, or switch by id, which needs no flag; recreate a channel that expired.
+Shows: `failed` with `channel_unknown` on the device for a `setChannel({ name })` the app cannot resolve; `npx hotcodepush channel list --json` prints `isDiscoverable`, and no channel is discoverable until flagged. A deleted or expired channel makes the probe exit before it reads an index: `invalid_parameter` for a name, `not_found` for an id or for a device whose channel is gone; the device keeps what it runs and its channel, every check fails with `channel_unknown`, and the SDK never changes the channel on its own.
+Fix: `npx hotcodepush channel update --channel <name> --discoverable --yes`, or switch by id, which needs no flag; recreate a channel that expired, or let the app clear a runtime choice with `setChannel(null)` when the check fails with `channel_unknown` and `getChannel().source` is `runtime`.
 
 **14. The app is holding restarts.** Occasional, only in apps that use the gate.
 Shows: the probe shows `available`; the debug screen shows a downloaded release under a running one that never changes. Search the app's source for `setRestartAllowed` with `isAllowed: false`.
