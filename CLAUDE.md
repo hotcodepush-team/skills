@@ -23,7 +23,7 @@ scripts/check-skills.mjs    the check: SKILL.md present, name equals the folder,
 - Third-person imperative, no "you". The `description` is the trigger: what it does, when to use it, and when not to, naming the sibling skill instead.
 - Keep `SKILL.md` under 500 lines; a large rule set moves to `references/`.
 - Voice: `HotCodePush` in CamelCase, the appositive "the over-the-air (OTA) update platform for React Native, Expo, Capacitor and Cordova" on the first mention in a file, no exclamation marks, no emoji, plain headings.
-- Framework order: React Native, Expo, Capacitor and Cordova wherever the supported frameworks are listed, the larger communities first.
+- Prose names the supported frameworks in the order React Native, Expo, Capacitor and Cordova, the larger communities first; a list a reader scans for their own item, such as an enum's choices, a prompt, a tab set or a table, sorts alphabetically.
 - HotCodePush ships over-the-air (OTA) updates: "over-the-air (OTA) update" on the first mention in a file, "OTA update" after it. "Live update" appears only in a `description`'s list of alternative names ("OTA updates, live updates or code push") and in the Capacitor package name `capacitor-live-updates`, never as HotCodePush's own term.
 - Quote the `description` in double quotes; a colon in an unquoted YAML value breaks parsers.
 
@@ -35,7 +35,8 @@ scripts/check-skills.mjs    the check: SKILL.md present, name equals the folder,
 
 ## Process
 
-- Commits are conventional commits; `main` is trunk and CI is the gate.
+- A test earns its place by catching a bug nothing else catches, at the lowest layer that can prove it; one test per branch, never per value, and nothing for what the types, the framework or a library guarantee.
+- A new test names the behaviour or the bug it proves; if deleting the production code would not fail it, it does not get in.
 - Commit only when the owner says "commit", push only on "push", each time separately.
 - Never place internal company information or customer data in this repo; it is public.
 
@@ -46,3 +47,10 @@ scripts/check-skills.mjs    the check: SKILL.md present, name equals the folder,
 - One or two short plain sentences. Capital letter, full stop, own line above the code. No run-on sentences, no chains of possessives.
 - Doc comments (JSDoc, KDoc, `///`, docstrings) only on a package's public API: one line that says what it does, then only what a caller must know.
 - Never: section banners, commented-out code, change history, the same comment in two places.
+
+## Agent workspace
+
+- No `.mcp.json`: no server covers this repo's stack.
+- `.claude/skills/` holds the developer skills copied from `hotcodepush-team/.github` with the skills CLI and pinned in `skills-lock.json`; update them with `npx skills update`.
+- `.github/copilot-instructions.md` holds the review criteria, the only Copilot-specific file.
+- Commits are conventional commits; `main` is trunk, CI is the gate, and a commit that lands an issue says `Closes #<n>`.
