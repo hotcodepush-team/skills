@@ -28,7 +28,7 @@ The causes below are ordered by how often each happens, not by how the system is
 
 1. The app and the channel: `hotcodepush.json` in the project root, or `--app <id|name>` and `--channel <id|name>` when the command runs elsewhere.
 2. The device. Best is its id, from the app's debug screen, the device's page in the console or `npx hotcodepush device list --json`, filtered with `--attribute userId=42`, `--platform ios`, `--binary-version 2.4.1` or `--channel staging`. Without the id: the platform, the binary version (`CFBundleShortVersionString` or `versionName`) and the binary build (`CFBundleVersion` or `versionCode`), from the debug screen.
-3. The release the device should have: `npx hotcodepush release list --json`, newest first; note its `number`, `id`, `bundleId`, `status`, `rolloutPercentage`, `conditions` and `liveAt`.
+3. The release the device should have: `npx hotcodepush release list --json`, newest first; note its `number`, `id`, `bundleId`, `status`, `rolloutPercent`, `conditions` and `liveAt`.
 4. What the device reports, when the person has it: the debug screen's last check, its status and reason, and the channel line with its source. Its share button copies the screen as text.
 
 ### Step 2: Probe
@@ -59,13 +59,13 @@ stdout:
   "sequence": 1761640000000,
   "unknownFacts": [],
   "device": { "deviceId": "...", "binaryVersion": "2.4.1", "binaryBuild": "57", "builtAt": "...", "fingerprint": "fp1:...", "osVersion": "17.4", "attributes": {}, "currentRelease": { "id": "...", "number": 41 }, "failedBundleIds": [], "reportedAt": "..." },
-  "outcome": { "status": "skipped", "reason": "device_incompatible", "condition": "fingerprint", "release": { "number": 43, "...": "..." } },
-  "verdicts": [{ "release": { "number": 43, "rolloutPercentage": 100, "isMandatory": false, "bundleId": "...", "conditions": [{ "type": "fingerprint", "fingerprint": "fp1:..." }] }, "conditions": [{ "type": "fingerprint", "isSatisfied": false }], "isEligible": false, "reason": "device_incompatible", "condition": "fingerprint" }]
+  "outcome": { "status": "skipped", "reason": "device_incompatible", "conditionType": "fingerprint", "release": { "number": 43, "...": "..." } },
+  "verdicts": [{ "release": { "number": 43, "rolloutPercent": 100, "isMandatory": false, "bundleId": "...", "conditions": [{ "type": "fingerprint", "fingerprint": "fp1:..." }] }, "conditions": [{ "type": "fingerprint", "isSatisfied": false }], "isEligible": false, "reason": "device_incompatible", "conditionType": "fingerprint" }]
 }
 ```
 
 - `status` is the files host's HTTP status; `outcome` is `null` and `verdicts` empty when it serves no index. `sequence` is the moment the served index was published, in milliseconds, or `null` without an index.
-- `outcome.status` is `available` (the device takes `outcome.release` on its next check), `up_to_date` (it runs `outcome.release`, or the embedded bundle when `null`) or `skipped` with `reason` and, for a condition, `condition`.
+- `outcome.status` is `available` (the device takes `outcome.release` on its next check), `up_to_date` (it runs `outcome.release`, or the embedded bundle when `null`) or `skipped` with `reason` and, for a condition, `conditionType`.
 - `verdicts` is every release the index offers, newest first, each condition `isSatisfied` or not.
 - `unknownFacts` lists what the probe could not know without `--device`: `os` and `rollout` always, `fingerprint` unless a registered store build has the binary's identity. An unknown fact counts as passing, so a `skipped` on it cannot show; when the outcome is `available` and the facts are unknown, run the probe again with `--device` before ruling causes 3, 4 and 6 out.
 
@@ -74,8 +74,8 @@ stdout:
 | Probe shows | Go to cause |
 | --- | --- |
 | `status` is not `200`, `outcome` is `null` | 19, then 8: the channel exists but has no index for this platform yet |
-| `outcome.status` `skipped`, `reason` `device_incompatible`, `condition` `fingerprint` | 3 |
-| `skipped`, `device_incompatible`, `condition` `binary` or `os` | 4 |
+| `outcome.status` `skipped`, `reason` `device_incompatible`, `conditionType` `fingerprint` | 3 |
+| `skipped`, `device_incompatible`, `conditionType` `binary` or `os` | 4 |
 | `skipped`, `device_not_in_rollout` | 6 |
 | `skipped`, `channel_paused` | 7 |
 | `skipped`, `release_older_than_binary` | 9 |
@@ -100,11 +100,11 @@ Shows: `available`; with `--device`, `device.currentRelease.number` below the ex
 Fix: close the app completely and reopen it, or press check now on the debug screen. For at once, release with `--mandatory`; for another moment, `applyStrategy` in `hotcodepush.json` (`next_start`, `next_resume`, `immediate` or `manual`).
 
 **3. The native fingerprint does not match.** Very common, and the CLI warned at upload.
-Shows: `skipped`, `device_incompatible`, `condition` `fingerprint`; the verdict's `conditions` has `{ "type": "fingerprint", "isSatisfied": false }`, and `device.fingerprint` differs from the release condition's `fingerprint`. The fingerprint moves when a plugin or native dependency is added, removed or bumped. `npx hotcodepush fingerprint diff <store-build.json> <current.json>` names the package that moved, over two files `npx hotcodepush fingerprint --json` wrote.
+Shows: `skipped`, `device_incompatible`, `conditionType` `fingerprint`; the verdict's `conditions` has `{ "type": "fingerprint", "isSatisfied": false }`, and `device.fingerprint` differs from the release condition's `fingerprint`. The fingerprint moves when a plugin or native dependency is added, removed or bumped. `npx hotcodepush fingerprint diff <store-build.json> <current.json>` names the package that moved, over two files `npx hotcodepush fingerprint --json` wrote.
 Fix: ship a store build that carries the new native layer; devices on the old one keep getting releases built against it. Only when the change is known to be safe for the old binary is a release widened to it explicitly.
 
 **4. The binary range excludes the device.** Common.
-Shows: `skipped`, `device_incompatible`, `condition` `binary` or `os`; the range is `range` on the release's condition of that `type` in `verdicts`, beside `device.binaryVersion` or `device.osVersion`. `os` is in `unknownFacts` without `--device`.
+Shows: `skipped`, `device_incompatible`, `conditionType` `binary` or `os`; the range is `range` on the release's condition of that `type` in `verdicts`, beside `device.binaryVersion` or `device.osVersion`. `os` is in `unknownFacts` without `--device`.
 Fix: release again with a range that includes the device, or without the condition; `release create --dry-run --json` prints the audience a range reaches before publishing.
 
 **5. The device follows another channel.** Common; the usual answer when one tester's phone did not update.
@@ -112,8 +112,8 @@ Shows: the probe's `channelId`, or `npx hotcodepush device get --device <id> --j
 Fix: release to the channel the device follows, or return the device with `setChannel(null)`; a test build that must follow its own channel gets it at build time through `HOTCODEPUSH_CHANNEL`.
 
 **6. The rollout has not reached the device.** Common on channels that stage releases.
-Shows: `skipped`, `device_not_in_rollout`, with `--device` only; the release's `rolloutPercentage` is in `verdicts`, and `release get --json` prints `progression` and `releaseCounters` for the gate a progression waits on. The bucket is a stable hash of device id and release id, so the device stays out until the percentage passes it.
-Fix: `npx hotcodepush release rollout --channel <channel> --release <number> --rollout-percentage 100 --yes`, or leave the progression to finish; to reach one phone without moving the rollout, release to it with `--device <id>`.
+Shows: `skipped`, `device_not_in_rollout`, with `--device` only; the release's `rolloutPercent` is in `verdicts`, and `release get --json` prints `progression` and `releaseCounters` for the gate a progression waits on. The bucket is a stable hash of device id and release id, so the device stays out until the percentage passes it.
+Fix: `npx hotcodepush release rollout --channel <channel> --release <number> --rollout-percent 100 --yes`, or leave the progression to finish; to reach one phone without moving the rollout, release to it with `--device <id>`.
 
 **7. The release or its channel is paused.** Common; check it before anything subtler.
 Shows: `skipped`, `channel_paused` for a paused channel, `npx hotcodepush channel get --channel <name> --json` printing `pausedAt`. A paused release is simply not offered: `release get --json` prints `status` `paused`, `pausedAt`, `autoPausedAt` when auto-pause acted, and the failure counts behind it in `releaseCounters`.
@@ -128,7 +128,7 @@ Shows: `skipped`, `release_older_than_binary`; `device.builtAt`, the build's flo
 Fix: create a release after the build; there is nothing to configure.
 
 **10. The release targets devices this one is not.** Occasional, mostly on the first release that uses targeting.
-Shows: `skipped`, `device_not_targeted`, `condition` `attribute` or `device`; `device.attributes` from the registry, or the `--attribute` flags given. A device that has not called `setAttributes()` yet matches no attribute condition; a typo in key or value never matches, since conditions carry hashes.
+Shows: `skipped`, `device_not_targeted`, `conditionType` `attribute` or `device`; `device.attributes` from the registry, or the `--attribute` flags given. A device that has not called `setAttributes()` yet matches no attribute condition; a typo in key or value never matches, since conditions carry hashes.
 Fix: set the attributes before the first sync, or release without the condition.
 
 **11. The release was revoked, or the bundle failed on this device before.** Occasional.
