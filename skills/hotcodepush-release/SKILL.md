@@ -47,7 +47,7 @@ On React Native and Expo the dependencies must be installed, since the CLI runs 
 
 - `--channel <id|name>`: only when the person names a channel other than `hotcodepush.json`'s; repeatable for several.
 - `--bundle-version <label>`: the bundle's version label, `package.json`'s `version` by default. In CI (the `CI` variable is set), pass `<version>+<short commit sha>`, for example `1.4.2+a1b2c3d`, so every pipeline run carries its own label; without a `version` in `package.json`, pass the short sha alone.
-- `--rollout-percentage <0-100>`, `--progression` (with `--progression-percentages`, `--progression-minimum-seconds` and `--progression-minimum-update-count` to change its defaults), `--mandatory`, `--notes "<text>"`, `--binary "<range>"`, `--os "<range>"`, `--attribute key=value`, `--device <id>`, `--platform ios|android`: pass each only when the person asked for what it does.
+- `--rollout-percent <0-100>`, `--progression` (with `--progression-rollout-percents`, `--progression-minimum-seconds` and `--progression-minimum-update-count` to change its defaults), `--mandatory`, `--notes "<text>"`, `--binary-version "<range>"`, `--os-version "<range>"`, `--attribute key=value`, `--device <id>`, `--platform ios|android`: pass each only when the person asked for what it does.
 - `--private-key-path <file>`: from Step 1, when the app signs and the key is not in `HOTCODEPUSH_SIGNING_KEY`.
 - `--git-sha`, `--git-ref`, `--git-message`: in a pipeline without a git checkout, so the release still records its commit; `--no-git` turns detection off.
 
@@ -66,7 +66,7 @@ It validates the build, hashes it, checks the size limit and asks the API for th
 stdout is an array, one entry per channel:
 
 ```json
-[{ "channelId": "...", "deviceCount": 10000, "reachedDeviceCount": 9995, "estimatedDeviceCount": 9995, "byPlatform": [...], "byBinaryVersion": [...], "warnings": [{ "code": "fingerprint_unknown", "message": "...", "details": null }] }]
+[{ "channelId": "...", "deviceCount": 10000, "reachedDeviceCount": 9995, "estimatedDeviceCount": 9995, "platform": [...], "binaryVersion": [...], "warnings": [{ "code": "fingerprint_unknown", "message": "...", "details": null }] }]
 ```
 
 - `deviceCount` is the channel's active devices, `reachedDeviceCount` those the release's conditions reach, `estimatedDeviceCount` the share at the rollout percentage.
@@ -88,7 +88,7 @@ npx hotcodepush release create --yes --json
 stdout is an array of releases, one per channel, and on React Native and Expo one per platform and channel:
 
 ```json
-[{ "id": "...", "number": 43, "channelId": "...", "bundleId": "...", "rolloutPercentage": 100, "status": "active", "liveAt": "2026-10-20T10:00:00.000Z", "isMandatory": false, "progression": null, "bundle": { "number": 17, "version": "1.4.2", "gitSha": "...", "gitRef": "...", "gitMessage": "...", "isGitDirty": false }, "channel": { "name": "production" } }]
+[{ "id": "...", "number": 43, "channelId": "...", "bundleId": "...", "rolloutPercent": 100, "status": "active", "liveAt": "2026-10-20T10:00:00.000Z", "isMandatory": false, "progression": null, "bundle": { "number": 17, "version": "1.4.2", "gitSha": "...", "gitRef": "...", "gitMessage": "...", "isGitDirty": false }, "channel": { "name": "production" } }]
 ```
 
 - `number` is the release's number in its channel; it is printed as `#43`. `bundle` and `channel` are embedded; the audience is not, Step 4 holds it.
