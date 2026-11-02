@@ -33,7 +33,7 @@ Read the guide before acting: its markdown twin is the URL plus `.md`, or the Ho
 ## Rules
 
 - Read the source's guide first, and follow its mapping for every SDK call the app makes. This file names the files and keys to remove; the guide names what each call becomes.
-- Run every CLI command with `--json` and, where it changes something, `--yes`. Parse stdout as one JSON document; diagnostics go to stderr.
+- Run every CLI command with `--json --no-input` and, where it changes something, `--yes`. `--no-input` makes a missing value an error instead of a question. Parse stdout as one JSON document; diagnostics and prompts go to stderr.
 - Use the project's package manager, read from the lockfile: `bun.lock` or `bun.lockb`, `pnpm-lock.yaml`, `yarn.lock`, otherwise npm. The commands below show npm.
 - Never print, log, commit or paste a token or a private key. A signing key file is named by its path and never read.
 - Never delete a file that holds a secret, `.env.hotupdater`, `.capgo_key_v2` or a private key: the old pipeline still needs it, and an untracked file is gone for good. Name it in the report for the person to move into the old pipeline's secrets.
@@ -227,11 +227,11 @@ import '@hotcodepush/capacitor-live-updates';
 Each stream Step 2 recorded, other than `production`, becomes a channel:
 
 ```sh
-npx hotcodepush channel create --name <name> --if-not-exists --json
+npx hotcodepush channel create --name <name> --if-not-exists --json --no-input
 ```
 
 - Names take letters, digits, `-` and `_`, one to 64 characters; the guides write them lowercase, `Staging` to `staging`. stdout is the channel with its `id`, `name` and `isDiscoverable`.
-- Add `--discoverable` when the app switches to the channel by name at runtime, as Step 2 recorded, because `setChannel({ name })` resolves discoverable channels alone; Capawesome Cloud's `sync({ channel })` and `fetchLatestBundle({ channel })` become `setChannel({ name })` then `sync()`, so every channel they named is discoverable too. `--if-not-exists` returns an existing channel as it is, without applying the flag: when the flag was wanted and `isDiscoverable` is `false`, run `npx hotcodepush channel update --channel <name> --discoverable --json`.
+- Add `--discoverable` when the app switches to the channel by name at runtime, as Step 2 recorded, because `setChannel({ name })` resolves discoverable channels alone; Capawesome Cloud's `sync({ channel })` and `fetchLatestBundle({ channel })` become `setChannel({ name })` then `sync()`, so every channel they named is discoverable too. `--if-not-exists` returns an existing channel as it is, without applying the flag: when the flag was wanted and `isDiscoverable` is `false`, run `npx hotcodepush channel update --channel <name> --discoverable --json --no-input`.
 - A build flavour that follows another channel than `hotcodepush.json`'s sets `HOTCODEPUSH_CHANNEL=<name>` in its build environment; this replaces Capawesome Cloud's and Capgo's `defaultChannel`, Capawesome Cloud's native default-channel keys, the per-build-type deployment keys, Codemagic Patch's `PATCH_IOS_DEPLOYMENT_KEY` and `PATCH_ANDROID_DEPLOYMENT_KEY`, `eas.json`'s `channel`, Appflow's `IonChannelName` and Stallion's per-flavour projects. There is no server-side default channel and no forced channel per device: the channel is stamped into the build, and `release create --device <id>` targets one device.
 
 #### The signing key
@@ -251,7 +251,7 @@ npx hotcodepush channel create --name <name> --if-not-exists --json
 `signing-key add` takes an RSA key of at least 2,048 bits as a PEM of PKCS #8 or PKCS #1, derives the public key and registers it; the private key stays where it is. When the table says yes and the person wants the key kept, ask for the file's path and run:
 
 ```sh
-npx hotcodepush signing-key add --private-key-path <file> --json
+npx hotcodepush signing-key add --private-key-path <file> --json --no-input
 ```
 
 stdout is the key with its `id` and `fingerprint`, and `publicKeys` in `hotcodepush.json` gains it. A file that holds no such key is refused before any request with `invalid_parameter`; relay `message`. Where no key carries over, or the person wants a fresh pair, name `npx hotcodepush signing-key create` and leave the decision to them. From then on every upload needs the private key, through `--private-key-path` or `HOTCODEPUSH_SIGNING_KEY` in CI, as the hotcodepush-release skill reads it.
@@ -299,7 +299,7 @@ Every source:
 - The readiness gate has no off switch: a release that has not rendered within `readyTimeoutSeconds`, 10 by default, is rolled back on that device and never applied there again. For a slow first render, raise `readyTimeoutSeconds` in `hotcodepush.json`.
 - The fingerprint replaces hand-set native versions; a native dependency change needs a store build.
 - `release rollback` publishes the previous bundle as a new release, mandatory by default; `release revoke` ends a release.
-- The build machine holds `npx hotcodepush login` or `HOTCODEPUSH_TOKEN`; under `CI` a store build without a token fails. `npx hotcodepush binary list --json` shows the registered builds.
+- The build machine holds `npx hotcodepush login` or `HOTCODEPUSH_TOKEN`; under `CI` a store build without a token fails. `npx hotcodepush binary list --json --no-input` shows the registered builds.
 - On React Native and Expo a debug build served by Metro takes no updates: test on a release build.
 - The old pipeline releases from the branch only, and the old service is shut down last, once its own active count and the device counts of `binary list` show the old builds below the share the person will leave behind.
 
@@ -322,7 +322,7 @@ Stallion: the app version is bumped; `--ci-token` becomes `HOTCODEPUSH_TOKEN` in
 ### Step 7: Release and report
 
 1. Replace the old pipeline step with the one line the guides' pipeline step uses, `npx hotcodepush release create --bundle-version "$(git rev-parse --short HEAD)" --yes`, with `npm run build &&` in front on Capacitor and Cordova: `@capawesome/cli apps:liveupdates:upload`, `apps:liveupdates:create`, `apps:builds:create --platform web` with `apps:deployments:create --channel`, or the `cloud-live-update-action` step, `@capgo/cli bundle upload`, `cmpatch release-react` per platform or `cmpatch-capacitor release create`, `appcenter codepush release-react` or Bitrise's `codepush-publish` Step and `bitrise :codepush push --bundle` per platform, `eas update`, `hot-updater deploy -p` per platform, `appflow deploy web`, `revopush release-react` per platform, or Stallion's `publish-bundle`, `release-bundle` and `update-release` per platform. One run covers both platforms. The secrets become `HOTCODEPUSH_TOKEN` and, for a signing app, `HOTCODEPUSH_SIGNING_KEY`.
-2. Run `npx hotcodepush binary list --json`. stdout is `{ "binaries": [...], "nextOffset": ... }`, each binary with its `version`, `build` and `platform`, and every one is a store build that ran the HotCodePush build step, since the old client registered none. `binaries` holds one or more: run the hotcodepush-release skill for the first release, with `--channel` from Step 5 where the pipeline named a channel other than `hotcodepush.json`'s, and no `--binary-version` unless the person asks, since the old ranges named old store versions. `binaries` is empty: no store build with the SDK exists yet; the first release is the hotcodepush-release skill's once one does, and the report says so.
+2. Run `npx hotcodepush binary list --json --no-input`. stdout is `{ "binaries": [...], "nextOffset": ... }`, each binary with its `version`, `build` and `platform`, and every one is a store build that ran the HotCodePush build step, since the old client registered none. `binaries` holds one or more: run the hotcodepush-release skill for the first release, with `--channel` from Step 5 where the pipeline named a channel other than `hotcodepush.json`'s, and no `--binary-version` unless the person asks, since the old ranges named old store versions. `binaries` is empty: no store build with the SDK exists yet; the first release is the hotcodepush-release skill's once one does, and the report says so.
 3. Report, in this order: the source and the branch; what Step 2 recorded; what was removed, file by file; what `init` did; the channels created and the key added; the binary ranges and defaults rewritten; the checklist of Step 6; the "In the report" line of the source, what the old service still serves and when to shut it down; the secret files left in place and where they go; whether the first release ran or waits for the store build.
 4. List the files that changed for the person to review and commit.
 
