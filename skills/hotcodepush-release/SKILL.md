@@ -15,7 +15,7 @@ Publish an update with HotCodePush, the over-the-air (OTA) update platform for R
 
 ## Rules
 
-- Run every CLI command with `--json`, and the release with `--yes`. Without `--json` the CLI may prompt and the run hangs; without `--yes` the release exits `4`.
+- Run every CLI command with `--json --no-input`, and the release with `--yes`. `--no-input` makes a missing value an error instead of a question, so the run never hangs; without `--yes` the release exits `4`.
 - Parse stdout as one JSON document. Diagnostics go to stderr: the packaging the CLI runs, lines starting with `Warning:`, the notices.
 - Never print, log or commit a token or a private key. A signing key reaches the CLI through `HOTCODEPUSH_SIGNING_KEY` or `--private-key-path <file>`; never read the file.
 - Never invent a channel, a rollout percentage or a condition. Pass a flag only when the person asked for what it does.
@@ -59,7 +59,7 @@ Working-tree changes not committed make the release's `bundle.isGitDirty` `true`
 Run, with the flags of Step 3:
 
 ```sh
-npx hotcodepush release create --dry-run --json
+npx hotcodepush release create --dry-run --json --no-input
 ```
 
 It validates the build, hashes it, checks the size limit and asks the API for the audience; nothing is signed, uploaded or published, so it needs no private key.
@@ -92,7 +92,7 @@ stdout is an array of releases, one per channel, and on React Native and Expo on
 ```
 
 - `number` is the release's number in its channel; it is printed as `#43`. `bundle` and `channel` are embedded; the audience is not, Step 4 holds it.
-- `liveAt` is set once the channel's index is written, which the CLI waits up to sixty seconds for. `null` means it is not live yet: run `npx hotcodepush release get --channel <channel> --release <number> --json` every few seconds until `liveAt` is set, at most a minute more, then report it as pending.
+- `liveAt` is set once the channel's index is written, which the CLI waits up to sixty seconds for. `null` means it is not live yet: run `npx hotcodepush release get --channel <channel> --release <number> --json --no-input` every few seconds until `liveAt` is set, at most a minute more, then report it as pending.
 - `Warning:` lines on stderr carry the audience warnings again; relay them.
 
 ### Step 6: Act on the exit code
@@ -112,9 +112,9 @@ Codes under exit `1`:
 | `fingerprint_unavailable` | The native fingerprint cannot be computed; `fix` says why: no lockfile, two lockfiles, or `node_modules` out of step with the lockfile. Install the dependencies from the one lockfile and run again. |
 | `signing_key_unavailable` | `hotcodepush.json` lists public keys and no private key was given. Step 1, item 3. |
 | `bundle_too_large` | A file or the bundle is above 512 MB. Move large media out of the web build; nothing was uploaded. |
-| `signature_required` | The app has a signing key the project does not list. Run `npx hotcodepush signing-key list --json`, add each `signingKeys[].publicKey` to `publicKeys` in `hotcodepush.json`, provide the private key, run again. |
+| `signature_required` | The app has a signing key the project does not list. Run `npx hotcodepush signing-key list --json --no-input`, add each `signingKeys[].publicKey` to `publicKeys` in `hotcodepush.json`, provide the private key, run again. |
 | `unknown_framework`, `invalid_json` | The project has no supported framework, or a JSON file does not parse; `message` names it. |
-| `not_found` | The app or channel in `hotcodepush.json` or `--channel` no longer exists. `npx hotcodepush channel list --json` shows what does. |
+| `not_found` | The app or channel in `hotcodepush.json` or `--channel` no longer exists. `npx hotcodepush channel list --json --no-input` shows what does. |
 | `client_update_required` | Update the CLI as `message` says. |
 | `plan_required` | The plan does not include the feature; `message` names the plan that does. Relay it; never retry. |
 | Any other API code | `message` carries the fix; relay it. A limit or a role is not solved by a retry. |
@@ -130,7 +130,7 @@ A run repeated after success creates another release of the same bundle; that is
 2. The audience from Step 4: reached of total, and every warning with what it means.
 3. The commit the release carries, `bundle.gitSha`, and that the working tree was dirty when `bundle.isGitDirty` is `true`.
 4. What devices do: by default they check at start and resume and apply the update at the next cold start; the person closes the app completely and reopens it to see the change. A mandatory release applies at once.
-5. How to watch it: `npx hotcodepush release get --channel <channel> --release <number> --json` shows `releaseCounters` (`appliedUpdateCount`, `confirmedUpdateCount` and the `*FailureCount` fields by reason) and the progression step; a device that did not update is the hotcodepush-debug-no-update skill's case.
+5. How to watch it: `npx hotcodepush release get --channel <channel> --release <number> --json --no-input` shows `releaseCounters` (`appliedUpdateCount`, `confirmedUpdateCount` and the `*FailureCount` fields by reason) and the progression step; a device that did not update is the hotcodepush-debug-no-update skill's case.
 6. For a pipeline: the same command, `npx hotcodepush release create --yes`, with `HOTCODEPUSH_TOKEN` and, when the app signs, `HOTCODEPUSH_SIGNING_KEY` as secrets, and `release create --dry-run` in the pull-request pipeline, which needs `HOTCODEPUSH_TOKEN` but not the signing key.
 
 ## Error Handling

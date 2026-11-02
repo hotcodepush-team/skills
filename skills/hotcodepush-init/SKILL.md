@@ -15,7 +15,7 @@ One CLI command does the ordinary project; this skill handles the unusual one: i
 
 ## Rules
 
-- Run every CLI command with `--json` and, where it changes something, `--yes`. Without them the CLI prompts and the run hangs.
+- Run every CLI command with `--json --no-input` and, where it changes something, `--yes`. `--no-input` makes a missing value an error instead of a question, so the run never hangs; `--yes` asks nothing either and confirms.
 - Parse stdout as one JSON document. Diagnostics go to stderr: the subprocesses `init` runs, lines starting with `Warning:`, the telemetry notice on the first run, the update notice.
 - Branch on `code`, never on the exit code alone. `init` exits `1` whenever a step stopped, whatever the step's code.
 - Never print, log, commit or paste a token or a private key. `HOTCODEPUSH_TOKEN` stays in the environment.
@@ -60,10 +60,10 @@ For each step with `"status": "stopped"`, act on its `code` and `manualStep`, th
 | `code` | Step | Do this |
 | --- | --- | --- |
 | `not_logged_in` | `sign_in` | Nobody is logged in and `HOTCODEPUSH_TOKEN` is not set. `manualStep` carries the device-authorization page and the code: `Approve at <url> with code <code>, then run "hotcodepush login" again.` Pick the authentication mode below. |
-| `missing_parameter` naming `--organization` | `organization` | Run `npx hotcodepush organization list --json`. Several organizations: pass `--organization <id>` for the one the person named, and ask when they named none. No organization at all: pass `--organization "<name>"` to create one; the name is the person's to give, so ask for it. |
-| `missing_parameter` naming `--app` | `app` | Run `npx hotcodepush app list --json`. Several apps: pass `--app <id>` for the one whose name matches the project, and ask when none or several do. No app yet: pass `--app "<name>"` to create one, named after the project's display name (`appName` in `capacitor.config`, `expo.name` in `app.json`, `<name>` in `config.xml`, `displayName` in a React Native `app.json`), falling back to `package.json`'s `name`. |
+| `missing_parameter` naming `--organization` | `organization` | Run `npx hotcodepush organization list --json --no-input`. Several organizations: pass `--organization <id>` for the one the person named, and ask when they named none. No organization at all: pass `--organization "<name>"` to create one; the name is the person's to give, so ask for it. |
+| `missing_parameter` naming `--app` | `app` | Run `npx hotcodepush app list --json --no-input`. Several apps: pass `--app <id>` for the one whose name matches the project, and ask when none or several do. No app yet: pass `--app "<name>"` to create one, named after the project's display name (`appName` in `capacitor.config`, `expo.name` in `app.json`, `<name>` in `config.xml`, `displayName` in a React Native `app.json`), falling back to `package.json`'s `name`. |
 | `invalid_parameter` | `organization`, `app` | The id in `--organization` or `--app` belongs to nothing the account can see: `Nothing has the id <id> from <flag>.` Correct it from the lists above. |
-| `not_found` | `organization` | `hotcodepush.json`'s `appId` names no app the account can see. Correct it from `npx hotcodepush app list --json`, or ask the person. |
+| `not_found` | `organization` | `hotcodepush.json`'s `appId` names no app the account can see. Correct it from `npx hotcodepush app list --json --no-input`, or ask the person. |
 | `command_failed` | `package`, `hook` | A command the CLI ran failed; `message` names the command line. At `package` it is the package install: run it by hand from the project root, read its output, fix the cause (registry access, a peer dependency, a lockfile out of date) and run Step 2 again. At `hook` it is `pod install` on React Native: run it by hand in the iOS project, or report that a macOS machine with CocoaPods is needed. |
 | `missing_parameter` naming `--ios-path` | `hook` | No native project was found. On Capacitor the step is `Run "npx cap add ios" and "npx cap add android", or pass --ios-path and --android-path.`: add the platforms the app ships. On React Native it is `Pass --ios-path and --android-path.`: the projects live elsewhere, name them. |
 | `missing_parameter` naming `--xcode-target` | `hook` | The iOS project has several app targets. List them from the `.xcodeproj` and pass `--xcode-target <name>` for the one the app ships; ask when it is unclear. |
@@ -85,7 +85,7 @@ Run Step 2 at most three times. When a step stops with the same code after its m
 Run:
 
 ```sh
-npx hotcodepush doctor --json
+npx hotcodepush doctor --json --no-input
 ```
 
 Read stdout: `{ "status": "clean" | "failed", "checks": [{ "check", "status", "message", "manualStep"? }] }`.
@@ -111,7 +111,7 @@ Run `doctor` after every round of fixes, at most three rounds, until `status` is
 
 ### Step 5: Report
 
-1. Run `npx hotcodepush open --json`; it prints `{ "url" }`, the app's console page, and launches nothing.
+1. Run `npx hotcodepush open --json --no-input`; it prints `{ "url" }`, the app's console page, and launches nothing.
 2. Report, in this order: what `init` did (the `message` of every `done` step), what was done by hand, the console URL and the docs at `https://hotcodepush.com/docs`.
 3. Say what happens next: a store build, an Xcode archive or a Gradle release build, runs the build step the setup wired and registers the binary; a developer's build takes updates too, its first update being the full bundle; a React Native or Expo debug build served by Metro takes no updates.
 4. Point at the first release: the hotcodepush-release skill, or `npx hotcodepush release create` on React Native and Expo and `npm run build && npx hotcodepush release create` on Capacitor and Cordova.

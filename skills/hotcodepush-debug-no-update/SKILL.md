@@ -17,7 +17,7 @@ The causes below are ordered by how often each happens, not by how the system is
 
 ## Rules
 
-- Run every CLI command with `--json`; parse stdout as one JSON document, stderr carries diagnostics.
+- Run every CLI command with `--json --no-input`, so a missing value is an error instead of a question; parse stdout as one JSON document, stderr carries diagnostics.
 - The probe reads; it changes nothing. Every fix that changes what devices receive, `release rollout`, `release resume`, `channel resume`, `organization update --spending-cap`, a new `release create`, asks for a confirmation and takes `--yes`. Run such a fix only when the person asked for it; otherwise name it.
 - Never print a token or a private key.
 - A device missing from the console is not evidence that it did not update: a device that reaches the files host but not the events endpoint updates and reports nothing.
@@ -27,8 +27,8 @@ The causes below are ordered by how often each happens, not by how the system is
 ### Step 1: Collect the facts
 
 1. The app and the channel: `hotcodepush.json` in the project root, or `--app <id|name>` and `--channel <id|name>` when the command runs elsewhere.
-2. The device. Best is its id, from the app's debug screen, the device's page in the console or `npx hotcodepush device list --json`, filtered with `--attribute userId=42`, `--platform ios`, `--binary-version 2.4.1` or `--channel staging`. Without the id: the platform, the binary version (`CFBundleShortVersionString` or `versionName`) and the binary build (`CFBundleVersion` or `versionCode`), from the debug screen.
-3. The release the device should have: `npx hotcodepush release list --json`, newest first; note its `number`, `id`, `bundleId`, `status`, `rolloutPercent`, `conditions` and `liveAt`.
+2. The device. Best is its id, from the app's debug screen, the device's page in the console or `npx hotcodepush device list --json --no-input`, filtered with `--attribute userId=42`, `--platform ios`, `--binary-version 2.4.1` or `--channel staging`. Without the id: the platform, the binary version (`CFBundleShortVersionString` or `versionName`) and the binary build (`CFBundleVersion` or `versionCode`), from the debug screen.
+3. The release the device should have: `npx hotcodepush release list --json --no-input`, newest first; note its `number`, `id`, `bundleId`, `status`, `rolloutPercent`, `conditions` and `liveAt`.
 4. What the device reports, when the person has it: the debug screen's last check, its status and reason, and the channel line with its source. Its share button copies the screen as text.
 
 ### Step 2: Probe
@@ -36,13 +36,13 @@ The causes below are ordered by how often each happens, not by how the system is
 With the device id:
 
 ```sh
-npx hotcodepush device probe --device <id> --json
+npx hotcodepush device probe --device <id> --json --no-input
 ```
 
 Without it:
 
 ```sh
-npx hotcodepush device probe --platform ios --binary-version 2.4.1 --binary-build 57 --json
+npx hotcodepush device probe --platform ios --binary-version 2.4.1 --binary-build 57 --json --no-input
 ```
 
 Add `--attribute key=value` for each attribute the app sets on the device and, without `--device`, `--channel <name>` when the device follows another channel than `hotcodepush.json`'s.
@@ -87,12 +87,12 @@ stdout:
 | `up_to_date` on the expected release | 1 |
 | `up_to_date` on an older release or `null`, and the expected release is missing from `verdicts` | 5, 7, 8, 11, 19 |
 
-The device-only reasons `build_debug`, `connection_metered` and every `failed` reason never appear in the probe; the debug screen or `npx hotcodepush device get --device <id> --json` (the row with its `events`, each `type` `checked`, `applied`, `confirmed` or `failed`, with a `reason` on `checked` and `failed`) shows them.
+The device-only reasons `build_debug`, `connection_metered` and every `failed` reason never appear in the probe; the debug screen or `npx hotcodepush device get --device <id> --json --no-input` (the row with its `events`, each `type` `checked`, `applied`, `confirmed` or `failed`, with a `reason` on `checked` and `failed`) shows them.
 
 ### Step 4: The causes, most likely first
 
 **1. The release carries the previous build.** Very common.
-Shows: `up_to_date` on the expected release, and the app looks unchanged. `npx hotcodepush release get --channel <channel> --release <number> --json` prints `bundle.gitSha`, `bundle.gitRef`, `bundle.gitMessage` and `bundle.isGitDirty`; a sha that is not the expected commit, or a dirty flag, means the upload took an older or uncommitted build. On Capacitor and Cordova the web build is the project's own, so a `release create` without a build in front releases yesterday's output.
+Shows: `up_to_date` on the expected release, and the app looks unchanged. `npx hotcodepush release get --channel <channel> --release <number> --json --no-input` prints `bundle.gitSha`, `bundle.gitRef`, `bundle.gitMessage` and `bundle.isGitDirty`; a sha that is not the expected commit, or a dirty flag, means the upload took an older or uncommitted build. On Capacitor and Cordova the web build is the project's own, so a `release create` without a build in front releases yesterday's output.
 Fix: build, then release, as one step, `npm run build && npx hotcodepush release create`; the hotcodepush-release skill does both.
 
 **2. The device has not applied it yet.** Very common, and almost every report in the first hour.
@@ -100,7 +100,7 @@ Shows: `available`; with `--device`, `device.currentRelease.number` below the ex
 Fix: close the app completely and reopen it, or press check now on the debug screen. For at once, release with `--mandatory`; for another moment, `applyStrategy` in `hotcodepush.json` (`next_start`, `next_resume`, `immediate` or `manual`).
 
 **3. The native fingerprint does not match.** Very common, and the CLI warned at upload.
-Shows: `skipped`, `device_incompatible`, `conditionType` `fingerprint`; the verdict's `conditions` has `{ "type": "fingerprint", "isSatisfied": false }`, and `device.fingerprint` differs from the release condition's `fingerprint`. The fingerprint moves when a plugin or native dependency is added, removed or bumped. `npx hotcodepush fingerprint diff <store-build.json> <current.json>` names the package that moved, over two files `npx hotcodepush fingerprint --json` wrote.
+Shows: `skipped`, `device_incompatible`, `conditionType` `fingerprint`; the verdict's `conditions` has `{ "type": "fingerprint", "isSatisfied": false }`, and `device.fingerprint` differs from the release condition's `fingerprint`. The fingerprint moves when a plugin or native dependency is added, removed or bumped. `npx hotcodepush fingerprint diff <store-build.json> <current.json>` names the package that moved, over two files `npx hotcodepush fingerprint --json --no-input` wrote.
 Fix: ship a store build that carries the new native layer; devices on the old one keep getting releases built against it. Only when the change is known to be safe for the old binary is a release widened to it explicitly.
 
 **4. The binary range excludes the device.** Common.
@@ -108,7 +108,7 @@ Shows: `skipped`, `device_incompatible`, `conditionType` `binary` or `os`; the r
 Fix: release again with a range that includes the device, or without the condition; `release create --dry-run --json` prints the audience a range reaches before publishing.
 
 **5. The device follows another channel.** Common; the usual answer when one tester's phone did not update.
-Shows: the probe's `channelId`, or `npx hotcodepush device get --device <id> --json`'s `channelId`, differs from the expected release's `channelId`; with `--device` the probe reads the device's own channel, without it the expected release is missing from `verdicts` because the probe read `hotcodepush.json`'s channel. `device get --json` prints `channel.name` and `channelSource`, `config` for the build's channel and `runtime` for a `setChannel()` call; `channelId` `null` is a build made without a token or with `HOTCODEPUSH_OFFLINE=1` and a channel named rather than given by id, which follows no channel and takes no OTA updates.
+Shows: the probe's `channelId`, or `npx hotcodepush device get --device <id> --json --no-input`'s `channelId`, differs from the expected release's `channelId`; with `--device` the probe reads the device's own channel, without it the expected release is missing from `verdicts` because the probe read `hotcodepush.json`'s channel. `device get --json` prints `channel.name` and `channelSource`, `config` for the build's channel and `runtime` for a `setChannel()` call; `channelId` `null` is a build made without a token or with `HOTCODEPUSH_OFFLINE=1` and a channel named rather than given by id, which follows no channel and takes no OTA updates.
 Fix: release to the channel the device follows, or return the device with `setChannel(null)`; a test build that must follow its own channel gets it at build time through `HOTCODEPUSH_CHANNEL`.
 
 **6. The rollout has not reached the device.** Common on channels that stage releases.
@@ -116,11 +116,11 @@ Shows: `skipped`, `device_not_in_rollout`, with `--device` only; the release's `
 Fix: `npx hotcodepush release rollout --channel <channel> --release <number> --rollout-percent 100 --yes`, or leave the progression to finish; to reach one phone without moving the rollout, release to it with `--device <id>`.
 
 **7. The release or its channel is paused.** Common; check it before anything subtler.
-Shows: `skipped`, `channel_paused` for a paused channel, `npx hotcodepush channel get --channel <name> --json` printing `pausedAt`. A paused release is simply not offered: `release get --json` prints `status` `paused`, `pausedAt`, `autoPausedAt` when auto-pause acted, and the failure counts behind it in `releaseCounters`.
+Shows: `skipped`, `channel_paused` for a paused channel, `npx hotcodepush channel get --channel <name> --json --no-input` printing `pausedAt`. A paused release is simply not offered: `release get --json` prints `status` `paused`, `pausedAt`, `autoPausedAt` when auto-pause acted, and the failure counts behind it in `releaseCounters`.
 Fix: fix what the devices hit first, then `npx hotcodepush release resume --channel <channel> --release <number> --yes` or `npx hotcodepush channel resume --channel <name> --yes`; resuming a still-broken release trips auto-pause again.
 
 **8. The release does not cover the platform.** Occasional, mostly on React Native and Expo, where a bundle is per platform.
-Shows: the probe with `--platform android` finds no release where `--platform ios` finds one; `npx hotcodepush bundle get --bundle <number> --json` prints `platforms`.
+Shows: the probe with `--platform android` finds no release where `--platform ios` finds one; `npx hotcodepush bundle get --bundle <number> --json --no-input` prints `platforms`.
 Fix: release for both platforms; on Capacitor and Cordova the second release moves zero bytes, since both platforms share one bundle.
 
 **9. The release is older than the binary.** Occasional, and normal right after a store release.
@@ -140,7 +140,7 @@ Shows: every check on the device says `skipped` with `build_debug`; the probe sh
 Fix: test on a release build, or on a development build that follows its own channel.
 
 **13. The channel does not resolve.** Occasional, mostly on preview and tenant setups.
-Shows: `failed` with `channel_unknown` on the device for a `setChannel({ name })` the app cannot resolve; `npx hotcodepush channel list --json` prints `isDiscoverable`, and no channel is discoverable until flagged. A deleted or expired channel makes the probe exit before it reads an index: `invalid_parameter` for a name, `not_found` for an id or for a device whose channel is gone; the device keeps what it runs and its channel, every check fails with `channel_unknown`, and the SDK never changes the channel on its own.
+Shows: `failed` with `channel_unknown` on the device for a `setChannel({ name })` the app cannot resolve; `npx hotcodepush channel list --json --no-input` prints `isDiscoverable`, and no channel is discoverable until flagged. A deleted or expired channel makes the probe exit before it reads an index: `invalid_parameter` for a name, `not_found` for an id or for a device whose channel is gone; the device keeps what it runs and its channel, every check fails with `channel_unknown`, and the SDK never changes the channel on its own.
 Fix: `npx hotcodepush channel update --channel <name> --discoverable --yes`, or switch by id, which needs no flag; recreate a channel that expired, or let the app clear a runtime choice with `setChannel(null)` when the check fails with `channel_unknown` and `getChannel().source` is `runtime`.
 
 **14. The app is holding restarts.** Occasional, only in apps that use the gate.
@@ -148,11 +148,11 @@ Shows: the probe shows `available`; the debug screen shows a downloaded release 
 Fix: call `setRestartAllowed({ isAllowed: true })` when the protected flow ends; the setting is never persisted.
 
 **15. The build step never ran.** Occasional, near-certain on a project not set up with `init`.
-Shows: the device is missing from `npx hotcodepush device list --json`, and `npx hotcodepush doctor --json` prints `hook` or `package` as `failed` with its `manualStep`. Without the build step the SDK has nothing to read: it is not configured, never checks and never reports, so the device never appears in the list. A missing device alone proves nothing, since one that cannot reach the events endpoint is missing too; the failed check is the proof.
+Shows: the device is missing from `npx hotcodepush device list --json --no-input`, and `npx hotcodepush doctor --json --no-input` prints `hook` or `package` as `failed` with its `manualStep`. Without the build step the SDK has nothing to read: it is not configured, never checks and never reports, so the device never appears in the list. A missing device alone proves nothing, since one that cannot reach the events endpoint is missing too; the failed check is the proof.
 Fix: the hotcodepush-init skill; `init` is idempotent and is the repair command. Then a new build.
 
 **16. The organization is at its spending cap.** Rare, announced by mail beforehand.
-Shows: `skipped`, `spending_cap_reached`; `npx hotcodepush organization get --json` prints `spendingCapCents` and `cappedAt`. Devices counted within the cap get every update; devices beyond it receive nothing new until the month turns or the cap is raised.
+Shows: `skipped`, `spending_cap_reached`; `npx hotcodepush organization get --json --no-input` prints `spendingCapCents` and `cappedAt`. Devices counted within the cap get every update; devices beyond it receive nothing new until the month turns or the cap is raised.
 Fix: `npx hotcodepush organization update --spending-cap <dollars> --yes` when the person decides so; the indexes are rewritten within seconds.
 
 **17. The SDK is older than the release needs.** Rare, growing with the age of the oldest binary.
@@ -180,6 +180,6 @@ Fix: for the first seconds, wait and probe again. If the probe still reports a m
 - Exit `2`, `missing_parameter` naming `--platform`, `--binary-version` or `--binary-build`: without `--device` all three are required.
 - Exit `2`, `invalid_parameter`: a channel name the app lacks or an attribute that is not `key=value`; `message` names it.
 - `not_found`: the device in `--device` was deleted or belongs to another app, or the channel, by id or the device's own, was deleted.
-- The files host times out: `hosts` in `npx hotcodepush doctor --json` says which host is unreachable from this machine; the device may still reach it.
+- The files host times out: `hosts` in `npx hotcodepush doctor --json --no-input` says which host is unreachable from this machine; the device may still reach it.
 - `unexpected_response`: the API answered something the CLI does not understand. Check `HOTCODEPUSH_API_URL` or the API URL in `config.json` and the network; if it persists, report it at `https://github.com/hotcodepush-team/cli/issues`.
 - `unexpected`: run once more with `--verbose`; if it persists, report it at `https://github.com/hotcodepush-team/cli/issues`.
