@@ -13,7 +13,11 @@ skills/<name>/SKILL.md      frontmatter (name, description, license, compatibili
 skills/<name>/references/   what the procedure reads only when needed, one level deep
 scripts/check-skills.mjs    the check: SKILL.md present, name equals the folder, description at most 1,024 characters,
                             only assets/, references/ and scripts/ beside it, flat, and the README lists the skill
+.claude-plugin/             the plugin manifest with the hosted MCP server, and the marketplace that lists it;
+                            Claude Code and Devin both read the manifest
 ```
+
+Check a manifest change with `claude plugin validate .`.
 
 ## Writing a skill
 

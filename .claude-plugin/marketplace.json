@@ -1,0 +1,15 @@
+{
+  "name": "hotcodepush",
+  "owner": {
+    "name": "HotCodePush",
+    "url": "https://hotcodepush.com"
+  },
+  "description": "The HotCodePush skills and MCP server for over-the-air (OTA) updates",
+  "plugins": [
+    {
+      "name": "hotcodepush",
+      "source": "./",
+      "description": "Set up, release and debug over-the-air (OTA) updates for React Native, Expo, Capacitor and Cordova apps with HotCodePush"
+    }
+  ]
+}

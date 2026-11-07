@@ -12,6 +12,16 @@ npx skills add hotcodepush-team/skills
 
 Update them later with `npx skills update`.
 
+The repo is also a plugin for Claude Code and Devin. The plugin adds the [HotCodePush MCP server](https://hotcodepush.com/docs/ai/mcp) to the skills.
+
+```sh
+# Claude Code
+/plugin install hotcodepush --marketplace hotcodepush-team/skills
+
+# Devin CLI
+devin plugins install hotcodepush-team/skills
+```
+
 ## Usage
 
 Each skill is a procedure over the HotCodePush CLI's `--json` output, so the agent runs it unattended and stops only where a person must approve something.
