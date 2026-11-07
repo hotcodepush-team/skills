@@ -1,0 +1,20 @@
+{
+  "name": "hotcodepush",
+  "description": "Set up, release and debug over-the-air (OTA) updates for React Native, Expo, Capacitor and Cordova apps with HotCodePush",
+  "author": {
+    "name": "HotCodePush",
+    "url": "https://hotcodepush.com"
+  },
+  "homepage": "https://hotcodepush.com/docs/ai",
+  "repository": "https://github.com/hotcodepush-team/skills",
+  "license": "MIT",
+  "privacyPolicyUrl": "https://hotcodepush.com/legal/privacy-policy",
+  "logo": "https://hotcodepush.com/favicon.svg",
+  "keywords": ["ota-updates", "react-native", "expo", "capacitor", "cordova", "mobile", "mcp"],
+  "mcpServers": {
+    "hotcodepush": {
+      "type": "http",
+      "url": "https://mcp.hotcodepush.com/mcp"
+    }
+  }
+}
