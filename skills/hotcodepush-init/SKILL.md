@@ -114,7 +114,7 @@ Run `doctor` after every round of fixes, at most three rounds, until `status` is
 1. Run `npx hotcodepush open --json --no-input`; it prints `{ "url" }`, the app's console page, and launches nothing.
 2. Report, in this order: what `init` did (the `message` of every `done` step), what was done by hand, the console URL and the docs at `https://hotcodepush.com/docs`.
 3. Say what happens next: a store build, an Xcode archive or a Gradle release build, runs the build step the setup wired and registers the binary; a developer's build takes updates too, its first update being the full bundle; a React Native or Expo debug build served by Metro takes no updates.
-4. Point at the first release: the hotcodepush-release skill, or `npx hotcodepush release create` on React Native and Expo and `npm run build && npx hotcodepush release create` on Capacitor and Cordova.
+4. Point at the first release: the hotcodepush-release skill, or `npx hotcodepush release create --platform ios` and again with `--platform android` on React Native and Expo, where one run makes one release of one platform, and `npm run build && npx hotcodepush release create` on Capacitor and Cordova.
 5. When `doctor`'s `signing_key` check says `Code signing is off. Run "hotcodepush signing-key create" to turn it on.`, mention it once, without running the command.
 6. List the files that changed, `hotcodepush.json`, `package.json`, the lockfile and the native files, for the person to review and commit.
 
