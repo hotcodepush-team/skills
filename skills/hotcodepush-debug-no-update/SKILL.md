@@ -18,7 +18,8 @@ The causes below are ordered by how often each happens, not by how the system is
 ## Rules
 
 - Run every CLI command with `--json --no-input`, so a missing value is an error instead of a question; parse stdout as one JSON document, stderr carries diagnostics.
-- The probe reads; it changes nothing. Every fix that changes what devices receive, `release rollout`, `release resume`, `channel resume`, `organization update --spending-cap`, a new `release create`, asks for a confirmation and takes `--yes`. Run such a fix only when the person asked for it; otherwise name it.
+- The probe reads; it changes nothing. Every fix that changes what devices receive, `release rollout`, `release resume`, `channel resume`, `organization update --spending-cap`, a new `release create`, `release rollback`, `release revoke`, asks for a confirmation and takes `--yes`. Run such a fix only when the person asked for it; otherwise name it.
+- Undoing a release: `npx hotcodepush release rollback --channel <channel> --yes --json` releases the release before the newest active one again, as a new mandatory release. On React Native and Expo `--platform ios|android` is required, since a bundle serves one platform there, and the rule applies to the releases of that platform. `--to-release <number|id>` names another target instead. `npx hotcodepush release revoke --channel <channel> --release <number> --yes --json` is the way back to the store build's bundle: devices on the release move to the newest older release they qualify for, or to the embedded bundle when there is none.
 - Never print a token or a private key.
 - A device missing from the console is not evidence that it did not update: a device that reaches the files host but not the events endpoint updates and reports nothing.
 
@@ -93,7 +94,7 @@ The device-only reasons `build_debug`, `connection_metered` and every `failed` r
 
 **1. The release carries the previous build.** Very common.
 Shows: `up_to_date` on the expected release, and the app looks unchanged. `npx hotcodepush release get --channel <channel> --release <number> --json --no-input` prints `bundle.gitSha`, `bundle.gitRef`, `bundle.gitMessage` and `bundle.isGitDirty`; a sha that is not the expected commit, or a dirty flag, means the upload took an older or uncommitted build. On Capacitor and Cordova the web build is the project's own, so a `release create` without a build in front releases yesterday's output.
-Fix: build, then release, as one step, `npm run build && npx hotcodepush release create`; the hotcodepush-release skill does both.
+Fix: build, then release, as one step, `npm run build && npx hotcodepush release create`; the hotcodepush-release skill does both. When the wrong build must leave the fleet first, `release rollback` as the Rules state it, with `--platform` on React Native and Expo.
 
 **2. The device has not applied it yet.** Very common, and almost every report in the first hour.
 Shows: `available`; with `--device`, `device.currentRelease.number` below the expected number and `device.reportedAt` older than the release's `liveAt`. The default strategy applies an update at the next cold start, and checks happen at start, on resume and every fifteen minutes in the foreground by default (`checkIntervalSeconds` in `hotcodepush.json`).
@@ -121,7 +122,7 @@ Fix: fix what the devices hit first, then `npx hotcodepush release resume --chan
 
 **8. The release does not cover the platform.** Occasional, mostly on React Native and Expo, where a bundle is per platform.
 Shows: the probe with `--platform android` finds no release where `--platform ios` finds one; `npx hotcodepush bundle get --bundle <number> --json --no-input` prints `platforms`.
-Fix: release for both platforms; on Capacitor and Cordova the second release moves zero bytes, since both platforms share one bundle.
+Fix: release the missing platform, `npx hotcodepush release create --platform android --yes --json` on React Native and Expo, where one run makes one release of one platform. On Capacitor and Cordova a release without `--platform` serves both, and a second one narrowed to the other platform moves zero bytes, since both platforms share one bundle.
 
 **9. The release is older than the binary.** Occasional, and normal right after a store release.
 Shows: `skipped`, `release_older_than_binary`; `device.builtAt`, the build's floor, is after the release's `createdAt`. No release created before the build is ever applied on that binary; `device.builtAt` is `null` when no binary created by `binary create` matches the platform, version and build, and then this never shows, with or without `--device`.
@@ -133,7 +134,7 @@ Fix: set the attributes before the first sync, or release without the condition.
 
 **11. The release was revoked, or the bundle failed on this device before.** Occasional.
 Shows: `skipped`, `release_revoked`, which means the release the device runs was revoked, `outcome.release` being the older release it falls back to or `null`, and `release get --json` printing `status` `revoked`; or `bundle_failed_before` with the bundle in `device.failedBundleIds`, from the device's `failed` events. `releaseCounters` shows whether it is this device or all of them.
-Fix: for a revoked release, publish a new one; for a local blocklist, the app's `reset()` returns the device to its embedded bundle and clears the list.
+Fix: for a revoked release, publish a new one, `npx hotcodepush release create --bundle <number> --yes --json` re-releasing the same bundle. Revoked is final, and a further revoke is the way back to the store build's bundle, as the Rules state it. For a local blocklist, the app's `reset()` returns the device to its embedded bundle and clears the list.
 
 **12. OTA updates are off in this build.** Occasional, a one-line answer.
 Shows: every check on the device says `skipped` with `build_debug`; the probe shows `available`. `isEnabledInDebugBuilds` is `false` in `hotcodepush.json`, or on React Native and Expo the build is a debug build served by Metro, which embeds no bundle and takes no updates.
